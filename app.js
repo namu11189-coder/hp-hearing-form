@@ -684,10 +684,13 @@ function renderField(stepId, field) {
   const placeholder = field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : "";
   const fieldIconPath = getFieldIconPath(stepId, field.key);
   const fieldIcon = fieldIconPath ? `<img class="field-icon" src="${escapeHtml(fieldIconPath)}" alt="" aria-hidden="true" loading="lazy">` : "";
+  const fieldId = `${stepId}-${field.key}`;
+  const errorId = `${fieldId}-error`;
   const common = `
-    id="${escapeHtml(stepId)}-${escapeHtml(field.key)}"
+    id="${escapeHtml(fieldId)}"
     name="${escapeHtml(field.key)}"
     data-key="${escapeHtml(field.key)}"
+    aria-describedby="${escapeHtml(errorId)}"
     ${placeholder}
     ${isRequired ? "required" : ""}
   `;
@@ -701,7 +704,7 @@ function renderField(stepId, field) {
           ${fieldIcon}
           <textarea ${common}>${escapeHtml(valueText)}</textarea>
         </div>
-        <span class="error-text"></span>
+        <span class="error-text" id="${escapeHtml(errorId)}"></span>
       </div>
     `;
   }
@@ -718,7 +721,7 @@ function renderField(stepId, field) {
             ${field.options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
           </select>
         </div>
-        <span class="error-text"></span>
+        <span class="error-text" id="${escapeHtml(errorId)}"></span>
       </div>
     `;
   }
@@ -731,7 +734,7 @@ function renderField(stepId, field) {
         ${fieldIcon}
         <input ${common} type="${escapeHtml(field.type)}" value="${escapeHtml(valueText)}">
       </div>
-      <span class="error-text"></span>
+      <span class="error-text" id="${escapeHtml(errorId)}"></span>
     </div>
   `;
 }
@@ -898,10 +901,18 @@ function renderConfirm(step) {
   `;
 }
 
+function countEmptyFields(step) {
+  return step.fields.filter((field) => !getDisplayValue(step.id, field)).length;
+}
+
 function renderConfirmSection(step, index) {
+  const emptyCount = countEmptyFields(step);
+  const badge = emptyCount > 0
+    ? `<span class="confirm-badge empty">未入力 ${emptyCount}件</span>`
+    : `<span class="confirm-badge done">済</span>`;
   return `
-    <details class="confirm-section" open>
-      <summary>${escapeHtml(step.title)}</summary>
+    <details class="confirm-section">
+      <summary><span>${escapeHtml(step.title)}</span>${badge}</summary>
       <div class="confirm-items">
         ${step.fields.map((field) => renderConfirmItem(step, field)).join("")}
         <button type="button" class="edit-button" data-edit-step="${index}">この項目を修正する</button>
@@ -949,18 +960,55 @@ function bindConfirmEvents() {
   });
 }
 
+let releaseFocusTrap = null;
+
+function trapFocus(container) {
+  const FOCUSABLE = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  function handleKeydown(e) {
+    if (e.key !== "Tab") return;
+    const focusable = [...container.querySelectorAll(FOCUSABLE)];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+  document.addEventListener("keydown", handleKeydown);
+  return () => document.removeEventListener("keydown", handleKeydown);
+}
+
 function openHelp(step) {
   document.getElementById("help-title").textContent = step.helpTitle || "詳しく見る";
   document.getElementById("help-body").innerHTML = step.help.map((text) => `<p>${escapeHtml(text)}</p>`).join("");
   document.getElementById("help-modal").classList.remove("hidden");
   document.getElementById("help-close").focus();
+  releaseFocusTrap = trapFocus(document.querySelector(".modal-sheet"));
 }
 
 function closeHelp() {
   document.getElementById("help-modal").classList.add("hidden");
+  if (releaseFocusTrap) { releaseFocusTrap(); releaseFocusTrap = null; }
 }
 
+let lastSubmitTime = 0;
+
 async function submitForm() {
+  const now = Date.now();
+  if (now - lastSubmitTime < 3000) return;
+  lastSubmitTime = now;
+
+  const honeypot = document.getElementById("hp-website");
+  if (honeypot?.value) {
+    state.submitted = true;
+    clearSaved();
+    state.currentStep = steps.length - 1;
+    render();
+    return;
+  }
+
   const errors = validateRequired();
   if (errors.length) {
     formError.classList.remove("hidden");
@@ -1026,7 +1074,8 @@ function buildPayload() {
     purpose: labelsFromOptions(steps[1].fields[0].options, state.data.purpose).join(", "),
     desiredLaunch: state.data.scheduleBudgetServer.desiredLaunch,
     budgetStatus: state.data.scheduleBudgetServer.budgetStatus,
-    answerJson: state.data
+    answerJson: state.data,
+    _token: config.SUBMIT_TOKEN || ""
   };
 }
 
