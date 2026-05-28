@@ -329,6 +329,7 @@ const root = document.getElementById("step-root");
 const stepCount = document.getElementById("step-count");
 const progressBar = document.getElementById("progress-bar");
 const stepJumpNav = document.getElementById("step-jump-nav");
+const reviewNeededPanel = document.getElementById("review-needed-panel");
 const saveStatus = document.getElementById("save-status");
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
@@ -528,6 +529,97 @@ function getStepShortTitle(step) {
   return titles[step.id] || step.title;
 }
 
+function isReviewNeededText(value) {
+  return /未定|不明|相談|確認中|未準備|まだ分からない/.test(String(value ?? ""));
+}
+
+function optionLabelFromValue(options = [], value) {
+  const match = options.find(([, optionValue]) => optionValue === value);
+  return match ? match[0] : value;
+}
+
+function getReviewNeededItems() {
+  return steps.slice(0, -2).flatMap((step, stepIndex) => {
+    return step.fields.flatMap((field) => {
+      const value = getValue(step.id, field.key);
+      if (field.type === "checkboxes") {
+        const values = Array.isArray(value) ? value : [];
+        return values
+          .map((selectedValue) => optionLabelFromValue(field.options, selectedValue))
+          .filter(isReviewNeededText)
+          .map((label) => ({
+            stepIndex,
+            stepTitle: step.title,
+            fieldLabel: field.label,
+            value: label
+          }));
+      }
+      if (field.type === "radio") {
+        const label = optionLabelFromValue(field.options, value);
+        return isReviewNeededText(label) ? [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value: label }] : [];
+      }
+      if (field.type === "tri") {
+        return Object.values(value || {})
+          .filter((item) => isReviewNeededText(item?.display))
+          .map((item) => ({
+            stepIndex,
+            stepTitle: step.title,
+            fieldLabel: field.label,
+            value: `${item.label}: ${item.display}`
+          }));
+      }
+      if (Array.isArray(value)) {
+        const text = value.join("、");
+        return isReviewNeededText(text) ? [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value: text }] : [];
+      }
+      return isReviewNeededText(value) ? [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value }] : [];
+    });
+  });
+}
+
+function renderReviewNeededPanel() {
+  if (!reviewNeededPanel) return;
+  if (!mode.isMeeting) {
+    reviewNeededPanel.classList.add("hidden");
+    reviewNeededPanel.innerHTML = "";
+    return;
+  }
+
+  const items = getReviewNeededItems();
+  reviewNeededPanel.classList.remove("hidden");
+  if (!items.length) {
+    reviewNeededPanel.innerHTML = `
+      <div class="review-needed-header">
+        <div>
+          <p class="review-needed-kicker">確認が必要な項目</p>
+          <h2>未定・相談希望はありません</h2>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  reviewNeededPanel.innerHTML = `
+    <div class="review-needed-header">
+      <div>
+        <p class="review-needed-kicker">確認が必要な項目</p>
+        <h2>未定・相談希望 ${items.length}件</h2>
+      </div>
+    </div>
+    <div class="review-needed-list">
+      ${items.map((item) => `
+        <button type="button" class="review-needed-item" data-review-step="${item.stepIndex}">
+          <span class="review-needed-step">${escapeHtml(getStepShortTitle(steps[item.stepIndex]))}</span>
+          <span class="review-needed-main">
+            <span class="review-needed-field">${escapeHtml(item.fieldLabel)}</span>
+            <span class="review-needed-value">${escapeHtml(item.value)}</span>
+          </span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderStepJumpNav() {
   if (!stepJumpNav) return;
   const jumpSteps = steps.slice(0, -1);
@@ -556,6 +648,7 @@ function render() {
   stepCount.textContent = `${state.currentStep + 1} / ${steps.length}`;
   progressBar.style.width = `${((state.currentStep + 1) / steps.length) * 100}%`;
   renderStepJumpNav();
+  renderReviewNeededPanel();
   formError.classList.add("hidden");
   formError.textContent = "";
 
@@ -1280,6 +1373,11 @@ stepJumpNav?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-step-index]");
   if (!button) return;
   goToStep(Number(button.dataset.stepIndex));
+});
+reviewNeededPanel?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-review-step]");
+  if (!button) return;
+  goToStep(Number(button.dataset.reviewStep));
 });
 nextButton.addEventListener("click", () => {
   const step = steps[state.currentStep];
