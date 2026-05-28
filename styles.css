@@ -351,6 +351,90 @@ h1 {
   white-space: nowrap;
 }
 
+.review-needed-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.review-needed-summary span {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.review-needed-summary p {
+  margin: 0;
+  font-weight: 850;
+}
+
+.review-needed-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.review-needed-group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.review-needed-group-title {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 86px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: #f7f8f4;
+  padding: 13px 14px;
+  text-align: left;
+}
+
+.review-needed-group-title span {
+  display: inline-grid;
+  place-items: center;
+  min-height: 30px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.review-needed-group-title strong {
+  min-width: 0;
+  font-size: 1rem;
+}
+
+.review-needed-group-title em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 850;
+}
+
+.review-needed-list-large {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 12px;
+}
+
+.review-needed-list-large .review-needed-item {
+  grid-template-columns: 1fr;
+}
+
 .step-header {
   margin-bottom: 24px;
 }
@@ -1492,9 +1576,38 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .review-needed-summary {
+    padding: 13px;
+  }
+
+  .review-needed-summary span {
+    width: 40px;
+    height: 40px;
+    font-size: 1.12rem;
+  }
+
+  .review-needed-group-title {
+    grid-template-columns: 64px 1fr auto;
+    gap: 8px;
+    padding: 11px;
+  }
+
+  .review-needed-group-title strong {
+    font-size: 0.92rem;
+  }
+
+  .review-needed-list-large {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
   .review-needed-item {
     grid-template-columns: 66px 1fr;
     padding: 9px;
+  }
+
+  .review-needed-list-large .review-needed-item {
+    grid-template-columns: 1fr;
   }
 
   h1 {

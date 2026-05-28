@@ -579,7 +579,86 @@ function getReviewNeededItems() {
 
 function renderReviewNeededPanel() {
   if (!reviewNeededPanel) return;
+  reviewNeededPanel.classList.add("hidden");
+  reviewNeededPanel.innerHTML = "";
+}
+
+function renderReviewNeededStep() {
+  const items = getReviewNeededItems();
   if (!mode.isMeeting) {
+    return "";
+  }
+  if (!items.length) {
+    return `
+      <section class="step review-needed-step-page">
+        <header class="step-header">
+          <h2>確認が必要な項目</h2>
+          <p class="step-description">未定・相談希望の項目はありません。</p>
+        </header>
+        <div class="complete-box">
+          <h2>確認事項はありません</h2>
+          <p>必要に応じて各ページを見直してください。</p>
+        </div>
+      </section>
+    `;
+  }
+
+  const groups = items.reduce((acc, item) => {
+    if (!acc[item.stepIndex]) {
+      acc[item.stepIndex] = {
+        stepIndex: item.stepIndex,
+        stepTitle: item.stepTitle,
+        items: []
+      };
+    }
+    acc[item.stepIndex].items.push(item);
+    return acc;
+  }, {});
+
+  return `
+    <section class="step review-needed-step-page">
+      <header class="step-header">
+        <h2>確認が必要な項目</h2>
+        <p class="step-description">未定・相談希望の項目をまとめています。項目を押すと該当ページへ移動します。</p>
+      </header>
+      <div class="review-needed-summary">
+        <span>${items.length}</span>
+        <p>打ち合わせで確認する項目</p>
+      </div>
+      <div class="review-needed-groups">
+        ${Object.values(groups).map((group) => `
+          <section class="review-needed-group">
+            <button type="button" class="review-needed-group-title" data-review-step="${group.stepIndex}">
+              <span>${escapeHtml(getStepShortTitle(steps[group.stepIndex]))}</span>
+              <strong>${escapeHtml(group.stepTitle)}</strong>
+              <em>${group.items.length}件</em>
+            </button>
+            <div class="review-needed-list review-needed-list-large">
+              ${group.items.map((item) => `
+                <button type="button" class="review-needed-item" data-review-step="${item.stepIndex}">
+                  <span class="review-needed-main">
+                    <span class="review-needed-field">${escapeHtml(item.fieldLabel)}</span>
+                    <span class="review-needed-value">${escapeHtml(item.value)}</span>
+                  </span>
+                </button>
+              `).join("")}
+            </div>
+          </section>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function bindReviewNeededEvents(container = root) {
+  container.querySelectorAll("[data-review-step]").forEach((button) => {
+    button.addEventListener("click", () => goToStep(Number(button.dataset.reviewStep)));
+  });
+}
+
+function renderReviewNeededLegacyPanel() {
+  if (!reviewNeededPanel) return;
+  if (!mode.isMeeting || state.currentStep === -1) {
     reviewNeededPanel.classList.add("hidden");
     reviewNeededPanel.innerHTML = "";
     return;
@@ -622,21 +701,28 @@ function renderReviewNeededPanel() {
 
 function renderStepJumpNav() {
   if (!stepJumpNav) return;
-  const jumpSteps = steps.slice(0, -1);
-  stepJumpNav.innerHTML = jumpSteps
-    .map((step, index) => {
-      const isCurrent = index === state.currentStep;
-      const isPast = index < state.currentStep;
+  const jumpItems = [
+    ...(mode.isMeeting ? [{ index: -1, title: "確認事項", shortTitle: "要確認" }] : []),
+    ...steps.slice(0, -1).map((step, index) => ({
+      index,
+      title: step.title,
+      shortTitle: getStepShortTitle(step)
+    }))
+  ];
+  stepJumpNav.innerHTML = jumpItems
+    .map((item, displayIndex) => {
+      const isCurrent = item.index === state.currentStep;
+      const isPast = mode.isMeeting ? item.index < state.currentStep : item.index < state.currentStep;
       return `
         <button
           type="button"
           class="step-jump-button ${isCurrent ? "active" : ""} ${isPast ? "visited" : ""}"
-          data-step-index="${index}"
-          aria-label="${escapeHtml(`${index + 1}. ${step.title}へ移動`)}"
+          data-step-index="${item.index}"
+          aria-label="${escapeHtml(`${displayIndex + 1}. ${item.title}へ移動`)}"
           aria-current="${isCurrent ? "step" : "false"}"
         >
-          <span class="step-jump-number">${index + 1}</span>
-          <span class="step-jump-label">${escapeHtml(getStepShortTitle(step))}</span>
+          <span class="step-jump-number">${displayIndex + 1}</span>
+          <span class="step-jump-label">${escapeHtml(item.shortTitle)}</span>
         </button>
       `;
     })
@@ -644,6 +730,21 @@ function renderStepJumpNav() {
 }
 
 function render() {
+  if (mode.isMeeting && state.currentStep === -1) {
+    stepCount.textContent = `1 / ${steps.length}`;
+    progressBar.style.width = "0%";
+    renderStepJumpNav();
+    renderReviewNeededPanel();
+    formError.classList.add("hidden");
+    formError.textContent = "";
+    prevButton.hidden = true;
+    nextButton.hidden = false;
+    nextButton.textContent = "基本情報へ進む";
+    root.innerHTML = renderReviewNeededStep();
+    bindReviewNeededEvents();
+    return;
+  }
+
   const step = steps[state.currentStep];
   stepCount.textContent = `${state.currentStep + 1} / ${steps.length}`;
   progressBar.style.width = `${((state.currentStep + 1) / steps.length) * 100}%`;
@@ -1064,7 +1165,8 @@ function validateRequired() {
 }
 
 function goToStep(index) {
-  state.currentStep = Math.max(0, Math.min(index, steps.length - 1));
+  const minStep = mode.isMeeting ? -1 : 0;
+  state.currentStep = Math.max(minStep, Math.min(index, steps.length - 1));
   save();
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1293,7 +1395,7 @@ async function loadRemoteAnswer({ force = false } = {}) {
     const result = await fetchJson(url.toString());
     if (!result.answerJson) throw new Error("answer_not_found");
     state.data = normalizeAnswerData(result.answerJson);
-    state.currentStep = Math.min(Number(saved?.currentStep || 0), steps.length - 2);
+    state.currentStep = mode.isMeeting ? -1 : Math.min(Number(saved?.currentStep || 0), steps.length - 2);
     state.submitted = false;
     mode.loadedFromServer = true;
     save();
@@ -1380,6 +1482,10 @@ reviewNeededPanel?.addEventListener("click", (event) => {
   goToStep(Number(button.dataset.reviewStep));
 });
 nextButton.addEventListener("click", () => {
+  if (mode.isMeeting && state.currentStep === -1) {
+    goToStep(0);
+    return;
+  }
   const step = steps[state.currentStep];
   if (step.id === "confirm") {
     if (mode.isMeeting) saveMeetingAnswer();
@@ -1401,7 +1507,7 @@ async function init() {
   const saved = loadSaved();
   if (saved?.data && hasSavedAnswer(saved.data)) {
     state.data = normalizeAnswerData(saved.data);
-    state.currentStep = Math.min(Number(saved.currentStep || 0), steps.length - 2);
+    state.currentStep = mode.isMeeting ? -1 : Math.min(Number(saved.currentStep || 0), steps.length - 2);
     if (mode.isMeeting) updateMeetingMeta("この端末に残っていた編集内容を復元しました");
   } else if (saved?.data) {
     clearSaved();
