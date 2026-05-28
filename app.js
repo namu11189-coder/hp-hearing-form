@@ -328,6 +328,7 @@ const state = {
 const root = document.getElementById("step-root");
 const stepCount = document.getElementById("step-count");
 const progressBar = document.getElementById("progress-bar");
+const stepJumpNav = document.getElementById("step-jump-nav");
 const saveStatus = document.getElementById("save-status");
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
@@ -511,10 +512,50 @@ function toKey(label) {
     .replace(/[^\p{Letter}\p{Number}_]/gu, "");
 }
 
+function getStepShortTitle(step) {
+  const titles = {
+    customer: "基本",
+    purpose: "目的",
+    target: "閲覧者",
+    contents: "掲載",
+    design: "デザイン",
+    materials: "素材",
+    features: "機能",
+    operation: "運用",
+    scheduleBudgetServer: "時期",
+    confirm: "確認"
+  };
+  return titles[step.id] || step.title;
+}
+
+function renderStepJumpNav() {
+  if (!stepJumpNav) return;
+  const jumpSteps = steps.slice(0, -1);
+  stepJumpNav.innerHTML = jumpSteps
+    .map((step, index) => {
+      const isCurrent = index === state.currentStep;
+      const isPast = index < state.currentStep;
+      return `
+        <button
+          type="button"
+          class="step-jump-button ${isCurrent ? "active" : ""} ${isPast ? "visited" : ""}"
+          data-step-index="${index}"
+          aria-label="${escapeHtml(`${index + 1}. ${step.title}へ移動`)}"
+          aria-current="${isCurrent ? "step" : "false"}"
+        >
+          <span class="step-jump-number">${index + 1}</span>
+          <span class="step-jump-label">${escapeHtml(getStepShortTitle(step))}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
 function render() {
   const step = steps[state.currentStep];
   stepCount.textContent = `${state.currentStep + 1} / ${steps.length}`;
   progressBar.style.width = `${((state.currentStep + 1) / steps.length) * 100}%`;
+  renderStepJumpNav();
   formError.classList.add("hidden");
   formError.textContent = "";
 
@@ -1235,6 +1276,11 @@ async function saveMeetingAnswer() {
 }
 
 prevButton.addEventListener("click", () => goToStep(state.currentStep - 1));
+stepJumpNav?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-step-index]");
+  if (!button) return;
+  goToStep(Number(button.dataset.stepIndex));
+});
 nextButton.addEventListener("click", () => {
   const step = steps[state.currentStep];
   if (step.id === "confirm") {
