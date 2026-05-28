@@ -2,6 +2,13 @@ const STORAGE_KEY = "homepage_hearing_form_v1";
 
 const config = window.HOMEPAGE_HEARING_FORM_CONFIG || {};
 const REQUIRED_VALIDATION_ENABLED = true;
+const query = new URLSearchParams(window.location.search);
+const mode = {
+  isMeeting: query.get("mode") === "meeting" || query.has("uuid"),
+  uuid: query.get("uuid") || "",
+  loadedFromServer: false,
+  lastSavedAt: ""
+};
 
 const triChoices = [
   { label: "必要", value: "needed" },
@@ -314,7 +321,8 @@ const state = {
   currentStep: 0,
   data: createDefaultData(),
   hasRestoredChoice: false,
-  submitted: false
+  submitted: false,
+  mode: mode.isMeeting ? "meeting" : "input"
 };
 
 const root = document.getElementById("step-root");
@@ -324,6 +332,10 @@ const saveStatus = document.getElementById("save-status");
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
 const formError = document.getElementById("form-error");
+
+function getStorageKey() {
+  return mode.isMeeting && mode.uuid ? `${STORAGE_KEY}_meeting_${mode.uuid}` : STORAGE_KEY;
+}
 
 function createDefaultData() {
   return {
@@ -379,7 +391,7 @@ function createDefaultData() {
 
 function loadSaved() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     return raw ? JSON.parse(raw) : null;
   } catch (error) {
     console.warn("保存データを読み込めませんでした", error);
@@ -415,18 +427,18 @@ function hasSavedAnswer(data) {
 function save() {
   state.data.meta.updatedAt = new Date().toISOString();
   localStorage.setItem(
-    STORAGE_KEY,
+    getStorageKey(),
     JSON.stringify({ currentStep: state.currentStep, data: state.data })
   );
-  saveStatus.textContent = "保存済み";
+  saveStatus.textContent = mode.isMeeting ? "編集中" : "保存済み";
   window.clearTimeout(saveStatus.timer);
   saveStatus.timer = window.setTimeout(() => {
-    if (!state.submitted) saveStatus.textContent = "未送信";
+    if (!state.submitted) saveStatus.textContent = mode.isMeeting ? "打ち合わせ編集中" : "未送信";
   }, 1400);
 }
 
 function clearSaved() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(getStorageKey());
 }
 
 function escapeHtml(value) {
@@ -436,6 +448,37 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function createMeetingBanner() {
+  const header = document.querySelector(".app-header");
+  if (!header || !mode.isMeeting) return null;
+  const banner = document.createElement("section");
+  banner.className = "meeting-banner";
+  banner.innerHTML = `
+    <div>
+      <p class="meeting-kicker">打ち合わせ編集モード</p>
+      <p class="meeting-title">お客様の回答をフォーム画面に戻して確認しています。</p>
+      <p class="meeting-meta" id="meeting-meta">${mode.uuid ? `回答ID: ${escapeHtml(mode.uuid)}` : "回答IDが指定されていません"}</p>
+    </div>
+    <div class="meeting-actions">
+      <button type="button" class="button secondary" id="meeting-reload">回答を再読み込み</button>
+      <button type="button" class="button primary" id="meeting-save">打ち合わせ内容を保存</button>
+    </div>
+  `;
+  header.insertAdjacentElement("afterend", banner);
+  document.getElementById("meeting-reload").addEventListener("click", () => loadRemoteAnswer({ force: true }));
+  document.getElementById("meeting-save").addEventListener("click", saveMeetingAnswer);
+  return banner;
+}
+
+function updateMeetingMeta(message) {
+  const meta = document.getElementById("meeting-meta");
+  if (!meta) return;
+  const parts = [];
+  if (mode.uuid) parts.push(`回答ID: ${mode.uuid}`);
+  if (message) parts.push(message);
+  meta.textContent = parts.join(" / ") || "打ち合わせ編集中";
 }
 
 function getStepData(stepId) {
@@ -472,7 +515,9 @@ function render() {
 
   prevButton.hidden = state.currentStep === 0 || step.id === "complete";
   nextButton.hidden = step.id === "complete";
-  nextButton.textContent = step.id === "confirm" ? "この内容で送信する" : state.currentStep === steps.length - 3 ? "回答内容を確認する" : "次へ進む";
+  nextButton.textContent = step.id === "confirm"
+    ? mode.isMeeting ? "打ち合わせ内容を保存する" : "この内容で送信する"
+    : state.currentStep === steps.length - 3 ? "回答内容を確認する" : "次へ進む";
 
   if (step.id === "confirm") {
     root.innerHTML = renderConfirm(step);
@@ -486,9 +531,11 @@ function render() {
     root.innerHTML = `
       <div class="complete-box">
         <h2>${escapeHtml(step.title)}</h2>
-        <p>送信内容を確認のうえ、後日ご連絡いたします。</p>
-        <p>未入力の項目は、打ち合わせ時に確認します。</p>
-        <p>この端末に保存されていた入力途中のデータは削除しました。</p>
+        ${
+          mode.isMeeting
+            ? "<p>打ち合わせ内容を保存しました。</p><p>未定項目は、引き続きこの画面で確認できます。</p>"
+            : "<p>送信内容を確認のうえ、後日ご連絡いたします。</p><p>未入力の項目は、打ち合わせ時に確認します。</p><p>この端末に保存されていた入力途中のデータは削除しました。</p>"
+        }
       </div>
     `;
     return;
@@ -896,7 +943,11 @@ function renderConfirm(step) {
       <div class="confirm-list">
         ${steps.slice(0, 9).map((entry, index) => renderConfirmSection(entry, index)).join("")}
       </div>
-      <p class="privacy-note">ご入力いただいた内容は、ホームページ制作のご相談・ご連絡のために使用します。</p>
+      <p class="privacy-note">${
+        mode.isMeeting
+          ? "打ち合わせで変更した内容は、保存ボタンを押すと同じ回答IDに上書き保存されます。"
+          : "ご入力いただいた内容は、ホームページ制作のご相談・ご連絡のために使用します。"
+      }</p>
     </section>
   `;
 }
@@ -1062,11 +1113,12 @@ function showSubmitError(message) {
 
 function buildPayload() {
   return {
+    action: mode.isMeeting ? "update" : "submit",
     submittedAt: state.data.meta.submittedAt,
     uuid: state.data.meta.uuid,
     updatedAt: state.data.meta.updatedAt,
-    submitStatus: "submitted",
-    managementStatus: "unreviewed",
+    submitStatus: mode.isMeeting ? "meeting_updated" : "submitted",
+    managementStatus: mode.isMeeting ? "in_meeting" : "unreviewed",
     companyName: state.data.customer.companyName,
     contactName: state.data.customer.contactName,
     email: state.data.customer.email,
@@ -1079,11 +1131,110 @@ function buildPayload() {
   };
 }
 
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false) {
+    throw new Error(result.message || "request_failed");
+  }
+  return result;
+}
+
+async function loadRemoteAnswer({ force = false } = {}) {
+  if (!mode.isMeeting || !mode.uuid || !config.GAS_ENDPOINT_URL) return false;
+  const saved = loadSaved();
+  if (!force && saved?.data && hasSavedAnswer(saved.data)) return false;
+
+  updateMeetingMeta("回答を読み込み中です");
+  try {
+    const url = new URL(config.GAS_ENDPOINT_URL);
+    url.searchParams.set("action", "get");
+    url.searchParams.set("uuid", mode.uuid);
+    url.searchParams.set("_token", config.SUBMIT_TOKEN || "");
+    const result = await fetchJson(url.toString());
+    if (!result.answerJson) throw new Error("answer_not_found");
+    state.data = normalizeAnswerData(result.answerJson);
+    state.currentStep = Math.min(Number(saved?.currentStep || 0), steps.length - 2);
+    state.submitted = false;
+    mode.loadedFromServer = true;
+    save();
+    updateMeetingMeta("回答を読み込みました");
+    render();
+    return true;
+  } catch (error) {
+    console.error(error);
+    updateMeetingMeta("回答を読み込めませんでした");
+    root.innerHTML = `
+      <div class="complete-box">
+        <h2>回答を読み込めませんでした</h2>
+        <p>回答IDまたはGoogle Apps Scriptの設定をご確認ください。</p>
+      </div>
+    `;
+    return false;
+  }
+}
+
+function normalizeAnswerData(answerJson) {
+  const base = createDefaultData();
+  const source = answerJson && typeof answerJson === "object" ? answerJson : {};
+  return {
+    ...base,
+    ...source,
+    meta: { ...base.meta, ...(source.meta || {}), uuid: source.meta?.uuid || mode.uuid || base.meta.uuid },
+    customer: { ...base.customer, ...(source.customer || {}) },
+    target: { ...base.target, ...(source.target || {}) },
+    design: { ...base.design, ...(source.design || {}) },
+    scheduleBudgetServer: { ...base.scheduleBudgetServer, ...(source.scheduleBudgetServer || {}) },
+    purpose: Array.isArray(source.purpose) ? source.purpose : base.purpose,
+    contents: source.contents && typeof source.contents === "object" ? source.contents : base.contents,
+    materials: source.materials && typeof source.materials === "object" ? source.materials : base.materials,
+    features: source.features && typeof source.features === "object" ? source.features : base.features,
+    operation: source.operation && typeof source.operation === "object" ? source.operation : base.operation
+  };
+}
+
+async function saveMeetingAnswer() {
+  if (!mode.isMeeting) return submitForm();
+  if (!config.GAS_ENDPOINT_URL) {
+    showSubmitError("保存先URLが未設定です。config.js に Google Apps Script のURLを設定してください。");
+    return;
+  }
+  if (!state.data.meta.uuid) state.data.meta.uuid = mode.uuid || (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now()));
+
+  nextButton.disabled = true;
+  const meetingSaveButton = document.getElementById("meeting-save");
+  if (meetingSaveButton) meetingSaveButton.disabled = true;
+  updateMeetingMeta("保存中です");
+  state.data.meta.updatedAt = new Date().toISOString();
+
+  try {
+    await fetchJson(config.GAS_ENDPOINT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(buildPayload())
+    });
+    mode.lastSavedAt = new Date().toLocaleString("ja-JP");
+    saveStatus.textContent = "保存済み";
+    updateMeetingMeta(`保存済み: ${mode.lastSavedAt}`);
+    state.currentStep = steps.length - 1;
+    render();
+  } catch (error) {
+    console.error(error);
+    updateMeetingMeta("保存できませんでした");
+    showSubmitError("打ち合わせ内容を保存できませんでした。入力内容はこの端末に残っています。");
+  } finally {
+    nextButton.disabled = false;
+    if (meetingSaveButton) meetingSaveButton.disabled = false;
+    if (steps[state.currentStep]?.id === "confirm") nextButton.textContent = "打ち合わせ内容を保存する";
+  }
+}
+
 prevButton.addEventListener("click", () => goToStep(state.currentStep - 1));
 nextButton.addEventListener("click", () => {
   const step = steps[state.currentStep];
   if (step.id === "confirm") {
-    submitForm();
+    if (mode.isMeeting) saveMeetingAnswer();
+    else submitForm();
     return;
   }
   if (!validateCurrentStep(true)) return;
@@ -1096,12 +1247,29 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeHelp();
 });
 
-const saved = loadSaved();
-if (saved?.data && hasSavedAnswer(saved.data)) {
-  state.data = saved.data;
-  state.currentStep = Math.min(Number(saved.currentStep || 0), steps.length - 2);
-} else if (saved?.data) {
-  clearSaved();
+async function init() {
+  createMeetingBanner();
+  const saved = loadSaved();
+  if (saved?.data && hasSavedAnswer(saved.data)) {
+    state.data = normalizeAnswerData(saved.data);
+    state.currentStep = Math.min(Number(saved.currentStep || 0), steps.length - 2);
+    if (mode.isMeeting) updateMeetingMeta("この端末に残っていた編集内容を復元しました");
+  } else if (saved?.data) {
+    clearSaved();
+  }
+
+  if (mode.isMeeting && mode.uuid && !hasSavedAnswer(state.data)) {
+    root.innerHTML = `
+      <div class="complete-box">
+        <h2>回答を読み込んでいます</h2>
+        <p>お客様の回答をフォーム画面に戻しています。</p>
+      </div>
+    `;
+    await loadRemoteAnswer({ force: true });
+    return;
+  }
+
+  render();
 }
 
-render();
+init();
