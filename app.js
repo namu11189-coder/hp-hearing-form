@@ -458,8 +458,7 @@ function createMeetingBanner() {
   banner.innerHTML = `
     <div>
       <p class="meeting-kicker">打ち合わせ編集モード</p>
-      <p class="meeting-title">お客様の回答をフォーム画面に戻して確認しています。</p>
-      <p class="meeting-meta" id="meeting-meta">${mode.uuid ? `回答ID: ${escapeHtml(mode.uuid)}` : "回答IDが指定されていません"}</p>
+      <p class="meeting-meta" id="meeting-meta">${escapeHtml(getMeetingClientLabel())}</p>
     </div>
     <div class="meeting-actions">
       <button type="button" class="button secondary" id="meeting-reload">回答を再読み込み</button>
@@ -475,10 +474,16 @@ function createMeetingBanner() {
 function updateMeetingMeta(message) {
   const meta = document.getElementById("meeting-meta");
   if (!meta) return;
-  const parts = [];
-  if (mode.uuid) parts.push(`回答ID: ${mode.uuid}`);
-  if (message) parts.push(message);
-  meta.textContent = parts.join(" / ") || "打ち合わせ編集中";
+  meta.textContent = getMeetingClientLabel(message);
+}
+
+function getMeetingClientLabel(fallback = "") {
+  const companyName = state.data.customer?.companyName?.trim();
+  const contactName = state.data.customer?.contactName?.trim();
+  if (companyName && contactName) return `${companyName} / ${contactName} 様`;
+  if (companyName) return companyName;
+  if (contactName) return `${contactName} 様`;
+  return fallback || "打ち合わせ編集中";
 }
 
 function getStepData(stepId) {
