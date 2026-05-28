@@ -533,6 +533,13 @@ function isReviewNeededText(value) {
   return /未定|不明|相談|確認中|未準備|まだ分からない/.test(String(value ?? ""));
 }
 
+function shouldReviewEmptyField(stepId, fieldKey) {
+  const reviewEmptyFields = {
+    customer: ["currentWebsiteUrl", "sns", "notes"]
+  };
+  return reviewEmptyFields[stepId]?.includes(fieldKey) || false;
+}
+
 function optionLabelFromValue(options = [], value) {
   const match = options.find(([, optionValue]) => optionValue === value);
   return match ? match[0] : value;
@@ -571,6 +578,9 @@ function getReviewNeededItems() {
       if (Array.isArray(value)) {
         const text = value.join("、");
         return isReviewNeededText(text) ? [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value: text }] : [];
+      }
+      if (!String(value ?? "").trim() && shouldReviewEmptyField(step.id, field.key)) {
+        return [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value: "未入力" }];
       }
       return isReviewNeededText(value) ? [{ stepIndex, stepTitle: step.title, fieldLabel: field.label, value }] : [];
     });
