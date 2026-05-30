@@ -673,33 +673,82 @@ function bindReviewNeededEvents(container = root) {
 }
 
 function renderAdminScreen() {
-  document.querySelector(".app-header h1").textContent = "案件一覧管理";
-  document.querySelector(".app-header .lead").textContent = "フォーム回答を案件ごとに確認し、打ち合わせ画面を開けます。";
-  document.querySelector(".progress-wrap").classList.add("hidden");
-  document.querySelector(".form-actions").classList.add("hidden");
-  root.innerHTML = `
-    <section class="admin-screen">
-      <div class="admin-toolbar">
-        <div class="admin-key-field">
-          <label for="admin-key">管理キー</label>
-          <input id="admin-key" type="password" autocomplete="current-password" placeholder="管理キーを入力">
+  document.body.classList.add("admin-mode");
+  document.body.innerHTML = `
+    <main class="admin-app-shell">
+      <aside class="admin-sidebar" aria-label="管理メニュー">
+        <div class="admin-brand">
+          <span>HP</span>
+          <div>
+            <strong>HP制作管理</strong>
+            <small>Project OS</small>
+          </div>
         </div>
-        <button type="button" class="button primary" id="admin-load">案件を読み込む</button>
-      </div>
-      <div class="admin-filters hidden" id="admin-filters">
-        <input id="admin-search" type="search" placeholder="会社名・担当者名で検索">
-        <select id="admin-status">
-          <option value="">すべてのステータス</option>
-        </select>
-      </div>
-      <div id="admin-summary" class="admin-summary hidden"></div>
-      <div id="admin-list" class="admin-list"></div>
-    </section>
+        <nav class="admin-nav">
+          <a class="active" href="?mode=admin">案件</a>
+          <a aria-disabled="true">制作補助</a>
+          <a aria-disabled="true">テンプレート</a>
+          <a aria-disabled="true">設定</a>
+        </nav>
+      </aside>
+      <section class="admin-workspace">
+        <header class="admin-hero">
+          <div>
+            <p>Dashboard</p>
+            <h1>案件一覧</h1>
+            <span>回答済みフォームを案件として確認し、打ち合わせへ進めます。</span>
+          </div>
+          <div class="admin-key-card">
+            <label for="admin-key">管理キー</label>
+            <div>
+              <input id="admin-key" type="password" autocomplete="current-password" placeholder="管理キー">
+              <button type="button" class="admin-primary-button" id="admin-load">読み込む</button>
+            </div>
+          </div>
+        </header>
+
+        <section class="admin-stats" id="admin-stats" aria-label="案件サマリー">
+          <article><span>全案件</span><strong>-</strong></article>
+          <article><span>未確認</span><strong>-</strong></article>
+          <article><span>確認事項</span><strong>-</strong></article>
+        </section>
+
+        <section class="admin-control-bar hidden" id="admin-filters">
+          <div class="admin-search">
+            <label for="admin-search">検索</label>
+            <input id="admin-search" type="search" placeholder="会社名・担当者名">
+          </div>
+          <div class="admin-status-filter">
+            <label for="admin-status">ステータス</label>
+            <select id="admin-status">
+              <option value="">すべて</option>
+            </select>
+          </div>
+          <div id="admin-summary" class="admin-summary hidden"></div>
+        </section>
+
+        <section id="admin-list" class="admin-list admin-empty-state">
+          <h2>管理キーを入力してください</h2>
+          <p>案件一覧を読み込むと、ここにカードで表示されます。</p>
+        </section>
+      </section>
+    </main>
   `;
   document.getElementById("admin-load").addEventListener("click", loadAdminCases);
   document.getElementById("admin-key").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadAdminCases();
   });
+}
+
+function renderAdminStats(items) {
+  const stats = document.getElementById("admin-stats");
+  const unreviewedCount = items.filter((item) => item.managementStatus === "unreviewed" || !item.managementStatus).length;
+  const reviewTotal = items.reduce((total, item) => total + item.reviewCount, 0);
+  stats.innerHTML = `
+    <article><span>全案件</span><strong>${items.length}</strong></article>
+    <article><span>未確認</span><strong>${unreviewedCount}</strong></article>
+    <article><span>確認事項</span><strong>${reviewTotal}</strong></article>
+  `;
 }
 
 let adminCases = [];
@@ -710,15 +759,18 @@ async function loadAdminCases() {
   const list = document.getElementById("admin-list");
   const summary = document.getElementById("admin-summary");
   if (!adminKey) {
-    list.innerHTML = '<div class="form-error">管理キーを入力してください。</div>';
+    list.className = "admin-list admin-empty-state";
+    list.innerHTML = '<h2>管理キーを入力してください</h2><p>案件一覧を表示するには管理キーが必要です。</p>';
     return;
   }
   if (!config.GAS_ENDPOINT_URL) {
-    list.innerHTML = '<div class="form-error">GAS_ENDPOINT_URLが未設定です。</div>';
+    list.className = "admin-list admin-empty-state";
+    list.innerHTML = '<h2>接続先が未設定です</h2><p>GAS_ENDPOINT_URLを確認してください。</p>';
     return;
   }
 
-  list.innerHTML = '<div class="complete-box"><h2>読み込み中です</h2><p>Spreadsheetから案件一覧を取得しています。</p></div>';
+  list.className = "admin-list admin-empty-state";
+  list.innerHTML = '<h2>読み込み中です</h2><p>Spreadsheetから案件一覧を取得しています。</p>';
   summary.classList.add("hidden");
   try {
     const url = new URL(config.GAS_ENDPOINT_URL);
@@ -726,12 +778,14 @@ async function loadAdminCases() {
     url.searchParams.set("adminKey", adminKey);
     const result = await fetchJson(url.toString());
     adminCases = (result.items || []).map(normalizeAdminCase);
+    renderAdminStats(adminCases);
     renderAdminFilters(adminCases);
     renderAdminList();
     keyInput.value = "";
   } catch (error) {
     console.error(error);
-    list.innerHTML = '<div class="form-error">案件一覧を読み込めませんでした。管理キーまたはGAS設定をご確認ください。</div>';
+    list.className = "admin-list admin-empty-state";
+    list.innerHTML = '<h2>読み込めませんでした</h2><p>管理キーまたはGAS設定をご確認ください。</p>';
   }
 }
 
@@ -776,9 +830,11 @@ function renderAdminList() {
   summary.classList.remove("hidden");
   summary.textContent = `${filtered.length}件 / 全${adminCases.length}件`;
   if (!filtered.length) {
-    list.innerHTML = '<div class="complete-box"><h2>該当する案件がありません</h2><p>検索条件を変更してください。</p></div>';
+    list.className = "admin-list admin-empty-state";
+    list.innerHTML = '<h2>該当する案件がありません</h2><p>検索条件を変更してください。</p>';
     return;
   }
+  list.className = "admin-list";
   list.innerHTML = filtered.map(renderAdminCard).join("");
 }
 
@@ -799,7 +855,7 @@ function renderAdminCard(item) {
         <p>${escapeHtml(item.phone || "電話番号未入力")}</p>
       </div>
       <div class="admin-card-actions">
-        ${item.meetingUrl ? `<a class="button primary" href="${escapeHtml(item.meetingUrl)}">打ち合わせを開く</a>` : ""}
+        ${item.meetingUrl ? `<a class="admin-primary-button" href="${escapeHtml(item.meetingUrl)}">打ち合わせ</a>` : ""}
       </div>
     </article>
   `;
