@@ -133,6 +133,31 @@ button {
   white-space: nowrap;
 }
 
+.icon-text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.button-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.button-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .eyebrow {
   margin: 0 0 10px;
   color: var(--accent);
@@ -1776,9 +1801,23 @@ summary:focus-visible {
     width: 100%;
     min-height: 46px;
     padding: 9px 8px;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     line-height: 1.35;
     white-space: normal;
+  }
+
+  .meeting-actions .button span:last-child {
+    display: none;
+  }
+
+  .button-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .button-icon svg {
+    width: 24px;
+    height: 24px;
   }
 
   .step-jump-nav {

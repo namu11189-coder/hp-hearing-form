@@ -464,14 +464,41 @@ function createMeetingBanner() {
       <p class="meeting-meta" id="meeting-meta">${escapeHtml(getMeetingClientLabel())}</p>
     </div>
     <div class="meeting-actions">
-      <button type="button" class="button secondary" id="meeting-reload">回答を再読み込み</button>
-      <button type="button" class="button primary" id="meeting-save">打ち合わせ内容を保存</button>
+      <button type="button" class="button secondary icon-text-button" id="meeting-reload">
+        <span class="button-icon" aria-hidden="true">${refreshIconSvg()}</span>
+        <span>再読み込み</span>
+      </button>
+      <button type="button" class="button primary icon-text-button" id="meeting-save">
+        <span class="button-icon" aria-hidden="true">${saveIconSvg()}</span>
+        <span>保存</span>
+      </button>
     </div>
   `;
   header.insertAdjacentElement("afterend", banner);
   document.getElementById("meeting-reload").addEventListener("click", () => loadRemoteAnswer({ force: true }));
   document.getElementById("meeting-save").addEventListener("click", saveMeetingAnswer);
   return banner;
+}
+
+function refreshIconSvg() {
+  return `
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M20 11a8 8 0 0 0-14.4-4.8L4 8" />
+      <path d="M4 4v4h4" />
+      <path d="M4 13a8 8 0 0 0 14.4 4.8L20 16" />
+      <path d="M20 20v-4h-4" />
+    </svg>
+  `;
+}
+
+function saveIconSvg() {
+  return `
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M5 4h11l3 3v13H5z" />
+      <path d="M8 4v6h8V4" />
+      <path d="M8 20v-6h8v6" />
+    </svg>
+  `;
 }
 
 function updateMeetingMeta(message) {
@@ -751,6 +778,17 @@ function renderAdminStats(items) {
   `;
 }
 
+function getManagementStatusLabel(status) {
+  const labels = {
+    unreviewed: "未確認",
+    in_meeting: "打ち合わせ中",
+    reviewed: "確認済み",
+    confirmed: "確認済み",
+    completed: "完了"
+  };
+  return labels[status] || status || "未設定";
+}
+
 let adminCases = [];
 
 async function loadAdminCases() {
@@ -812,7 +850,7 @@ function renderAdminFilters(items) {
   const search = document.getElementById("admin-search");
   const status = document.getElementById("admin-status");
   const statuses = [...new Set(items.map((item) => item.managementStatus).filter(Boolean))];
-  status.innerHTML = '<option value="">すべてのステータス</option>' + statuses.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+  status.innerHTML = '<option value="">すべてのステータス</option>' + statuses.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(getManagementStatusLabel(value))}</option>`).join("");
   filters.classList.remove("hidden");
   search.oninput = renderAdminList;
   status.onchange = renderAdminList;
@@ -846,7 +884,7 @@ function renderAdminCard(item) {
         <h2>${escapeHtml(item.companyName)}</h2>
         <p>${escapeHtml(item.contactName ? `${item.contactName} 様` : "担当者名未入力")}</p>
         <div class="admin-card-meta">
-          <span>${escapeHtml(item.managementStatus || "未設定")}</span>
+          <span>${escapeHtml(getManagementStatusLabel(item.managementStatus))}</span>
           <span>確認事項 ${item.reviewCount}件</span>
         </div>
       </div>
