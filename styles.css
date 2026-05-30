@@ -435,6 +435,113 @@ h1 {
   grid-template-columns: 1fr;
 }
 
+.admin-screen {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-toolbar,
+.admin-filters,
+.admin-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  padding: 16px;
+}
+
+.admin-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.admin-key-field {
+  display: grid;
+  gap: 7px;
+}
+
+.admin-key-field label {
+  font-weight: 850;
+}
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 10px;
+}
+
+.admin-summary {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.admin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-card {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-card-date {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-card h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.admin-card p {
+  margin: 0;
+}
+
+.admin-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.admin-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-card-contact {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-card-actions .button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .step-header {
   margin-bottom: 24px;
 }
@@ -1608,6 +1715,26 @@ summary:focus-visible {
 
   .review-needed-list-large .review-needed-item {
     grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar,
+  .admin-filters,
+  .admin-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card {
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-card-actions {
+    justify-content: stretch;
+  }
+
+  .admin-card-actions .button {
+    justify-content: center;
+    width: 100%;
   }
 
   h1 {

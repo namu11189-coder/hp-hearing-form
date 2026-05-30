@@ -4,7 +4,8 @@ const config = window.HOMEPAGE_HEARING_FORM_CONFIG || {};
 const REQUIRED_VALIDATION_ENABLED = true;
 const query = new URLSearchParams(window.location.search);
 const mode = {
-  isMeeting: query.get("mode") === "meeting" || query.has("uuid"),
+  isAdmin: query.get("mode") === "admin",
+  isMeeting: !query.get("mode") || query.get("mode") === "meeting" || query.has("uuid"),
   uuid: query.get("uuid") || "",
   loadedFromServer: false,
   lastSavedAt: ""
@@ -322,7 +323,7 @@ const state = {
   data: createDefaultData(),
   hasRestoredChoice: false,
   submitted: false,
-  mode: mode.isMeeting ? "meeting" : "input"
+  mode: mode.isAdmin ? "admin" : mode.isMeeting ? "meeting" : "input"
 };
 
 const root = document.getElementById("step-root");
@@ -506,6 +507,11 @@ function getValue(stepId, key) {
   return state.data[stepId]?.[key] ?? "";
 }
 
+function getValueFromData(data, stepId, key) {
+  if (stepId === "purpose") return data.purpose || [];
+  return data[stepId]?.[key] ?? "";
+}
+
 function toKey(label) {
   return label
     .normalize("NFKC")
@@ -545,10 +551,10 @@ function optionLabelFromValue(options = [], value) {
   return match ? match[0] : value;
 }
 
-function getReviewNeededItems() {
+function getReviewNeededItems(data = state.data) {
   return steps.slice(0, -2).flatMap((step, stepIndex) => {
     return step.fields.flatMap((field) => {
-      const value = getValue(step.id, field.key);
+      const value = getValueFromData(data, step.id, field.key);
       if (field.type === "checkboxes") {
         const values = Array.isArray(value) ? value : [];
         return values
@@ -664,6 +670,139 @@ function bindReviewNeededEvents(container = root) {
   container.querySelectorAll("[data-review-step]").forEach((button) => {
     button.addEventListener("click", () => goToStep(Number(button.dataset.reviewStep)));
   });
+}
+
+function renderAdminScreen() {
+  document.querySelector(".app-header h1").textContent = "案件一覧管理";
+  document.querySelector(".app-header .lead").textContent = "フォーム回答を案件ごとに確認し、打ち合わせ画面を開けます。";
+  document.querySelector(".progress-wrap").classList.add("hidden");
+  document.querySelector(".form-actions").classList.add("hidden");
+  root.innerHTML = `
+    <section class="admin-screen">
+      <div class="admin-toolbar">
+        <div class="admin-key-field">
+          <label for="admin-key">管理キー</label>
+          <input id="admin-key" type="password" autocomplete="current-password" placeholder="管理キーを入力">
+        </div>
+        <button type="button" class="button primary" id="admin-load">案件を読み込む</button>
+      </div>
+      <div class="admin-filters hidden" id="admin-filters">
+        <input id="admin-search" type="search" placeholder="会社名・担当者名で検索">
+        <select id="admin-status">
+          <option value="">すべてのステータス</option>
+        </select>
+      </div>
+      <div id="admin-summary" class="admin-summary hidden"></div>
+      <div id="admin-list" class="admin-list"></div>
+    </section>
+  `;
+  document.getElementById("admin-load").addEventListener("click", loadAdminCases);
+  document.getElementById("admin-key").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") loadAdminCases();
+  });
+}
+
+let adminCases = [];
+
+async function loadAdminCases() {
+  const keyInput = document.getElementById("admin-key");
+  const adminKey = keyInput.value.trim();
+  const list = document.getElementById("admin-list");
+  const summary = document.getElementById("admin-summary");
+  if (!adminKey) {
+    list.innerHTML = '<div class="form-error">管理キーを入力してください。</div>';
+    return;
+  }
+  if (!config.GAS_ENDPOINT_URL) {
+    list.innerHTML = '<div class="form-error">GAS_ENDPOINT_URLが未設定です。</div>';
+    return;
+  }
+
+  list.innerHTML = '<div class="complete-box"><h2>読み込み中です</h2><p>Spreadsheetから案件一覧を取得しています。</p></div>';
+  summary.classList.add("hidden");
+  try {
+    const url = new URL(config.GAS_ENDPOINT_URL);
+    url.searchParams.set("action", "list");
+    url.searchParams.set("adminKey", adminKey);
+    const result = await fetchJson(url.toString());
+    adminCases = (result.items || []).map(normalizeAdminCase);
+    renderAdminFilters(adminCases);
+    renderAdminList();
+    keyInput.value = "";
+  } catch (error) {
+    console.error(error);
+    list.innerHTML = '<div class="form-error">案件一覧を読み込めませんでした。管理キーまたはGAS設定をご確認ください。</div>';
+  }
+}
+
+function normalizeAdminCase(item) {
+  const answerJson = normalizeAnswerData(item.answerJson || {});
+  const reviewCount = getReviewNeededItems(answerJson).length;
+  return {
+    ...item,
+    answerJson,
+    reviewCount,
+    companyName: item.companyName || answerJson.customer.companyName || "会社名未入力",
+    contactName: item.contactName || answerJson.customer.contactName || "",
+    meetingUrl: item.meetingUrl || buildMeetingUrlForAdmin(item.uuid)
+  };
+}
+
+function buildMeetingUrlForAdmin(uuid) {
+  const base = `${location.origin}${location.pathname}`;
+  return uuid ? `${base}?mode=meeting&uuid=${encodeURIComponent(uuid)}` : "";
+}
+
+function renderAdminFilters(items) {
+  const filters = document.getElementById("admin-filters");
+  const search = document.getElementById("admin-search");
+  const status = document.getElementById("admin-status");
+  const statuses = [...new Set(items.map((item) => item.managementStatus).filter(Boolean))];
+  status.innerHTML = '<option value="">すべてのステータス</option>' + statuses.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+  filters.classList.remove("hidden");
+  search.oninput = renderAdminList;
+  status.onchange = renderAdminList;
+}
+
+function renderAdminList() {
+  const list = document.getElementById("admin-list");
+  const summary = document.getElementById("admin-summary");
+  const searchValue = document.getElementById("admin-search")?.value.trim().toLowerCase() || "";
+  const statusValue = document.getElementById("admin-status")?.value || "";
+  const filtered = adminCases.filter((item) => {
+    const searchTarget = `${item.companyName} ${item.contactName}`.toLowerCase();
+    return (!searchValue || searchTarget.includes(searchValue)) && (!statusValue || item.managementStatus === statusValue);
+  });
+  summary.classList.remove("hidden");
+  summary.textContent = `${filtered.length}件 / 全${adminCases.length}件`;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="complete-box"><h2>該当する案件がありません</h2><p>検索条件を変更してください。</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(renderAdminCard).join("");
+}
+
+function renderAdminCard(item) {
+  return `
+    <article class="admin-card">
+      <div class="admin-card-main">
+        <p class="admin-card-date">${escapeHtml(item.submittedAt || "送信日時なし")}</p>
+        <h2>${escapeHtml(item.companyName)}</h2>
+        <p>${escapeHtml(item.contactName ? `${item.contactName} 様` : "担当者名未入力")}</p>
+        <div class="admin-card-meta">
+          <span>${escapeHtml(item.managementStatus || "未設定")}</span>
+          <span>確認事項 ${item.reviewCount}件</span>
+        </div>
+      </div>
+      <div class="admin-card-contact">
+        <p>${escapeHtml(item.email || "メール未入力")}</p>
+        <p>${escapeHtml(item.phone || "電話番号未入力")}</p>
+      </div>
+      <div class="admin-card-actions">
+        ${item.meetingUrl ? `<a class="button primary" href="${escapeHtml(item.meetingUrl)}">打ち合わせを開く</a>` : ""}
+      </div>
+    </article>
+  `;
 }
 
 function renderReviewNeededLegacyPanel() {
@@ -1513,6 +1652,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 async function init() {
+  if (mode.isAdmin) {
+    renderAdminScreen();
+    return;
+  }
+
   createMeetingBanner();
   const saved = loadSaved();
   if (saved?.data && hasSavedAnswer(saved.data)) {
