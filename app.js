@@ -940,6 +940,8 @@ document.addEventListener("click", (event) => {
 
 function openProjectDrawer(project) {
   closeProjectDrawer();
+  const sections = project.sections || [];
+  const firstSection = sections[0] || { name: "", label: "", description: "", files: [] };
   const drawer = document.createElement("aside");
   drawer.className = "project-drawer";
   drawer.id = "project-drawer";
@@ -954,27 +956,87 @@ function openProjectDrawer(project) {
         </div>
         <button type="button" class="project-drawer-close" aria-label="閉じる">×</button>
       </header>
-      <div class="project-section-list">
-        ${project.sections.map((section) => `
-          <article class="project-section-card">
-            <div>
-              <p>${escapeHtml(section.name)}</p>
-              <h3>${escapeHtml(section.label)}</h3>
-              <span>${escapeHtml(section.description)}</span>
-            </div>
-            ${
-              section.files.length
-                ? `<ul>${section.files.map((file) => `<li>${escapeHtml(file)}</li>`).join("")}</ul>`
-                : '<p class="project-empty">まだファイルはありません</p>'
-            }
-          </article>
-        `).join("")}
+      <div class="project-explorer">
+        <nav class="project-tree" aria-label="制作フォルダー一覧">
+          <p class="project-tree-root">${escapeHtml(project.folder)}</p>
+          ${sections.map((section, index) => `
+            <button type="button" class="project-tree-item${index === 0 ? " is-active" : ""}" data-project-section="${escapeHtml(section.name)}">
+              <span class="project-folder-icon" aria-hidden="true"></span>
+              <span>
+                <strong>${escapeHtml(section.label)}</strong>
+                <small>${escapeHtml(section.name)}</small>
+              </span>
+              <em>${section.files.length}</em>
+            </button>
+          `).join("")}
+        </nav>
+        <section class="project-file-pane" aria-live="polite">
+          ${renderProjectFilePane(firstSection)}
+        </section>
       </div>
     </section>
   `;
   document.body.appendChild(drawer);
   drawer.querySelector(".project-drawer-backdrop").addEventListener("click", closeProjectDrawer);
   drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
+  drawer.querySelectorAll("[data-project-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const section = sections.find((entry) => entry.name === button.dataset.projectSection);
+      if (!section) return;
+      drawer.querySelectorAll("[data-project-section]").forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+      drawer.querySelector(".project-file-pane").innerHTML = renderProjectFilePane(section);
+    });
+  });
+}
+
+function renderProjectFilePane(section) {
+  const files = section.files || [];
+  return `
+    <div class="project-file-pane-header">
+      <div>
+        <p>${escapeHtml(section.name)}</p>
+        <h3>${escapeHtml(section.label)}</h3>
+        <span>${escapeHtml(section.description)}</span>
+      </div>
+      <strong>${files.length}件</strong>
+    </div>
+    ${
+      files.length
+        ? `<div class="project-file-list">
+            ${files.map((file) => `
+              <article class="project-file-row">
+                <span class="project-file-icon" aria-hidden="true">${escapeHtml(getProjectFileExtension(file))}</span>
+                <div>
+                  <strong>${escapeHtml(file)}</strong>
+                  <small>${escapeHtml(getProjectFileTypeLabel(file))}</small>
+                </div>
+              </article>
+            `).join("")}
+          </div>`
+        : `<div class="project-empty-state">
+            <p>まだファイルはありません</p>
+            <span>ここに提案書、構成案、見積前メモなどを追加していく想定です。</span>
+          </div>`
+    }
+  `;
+}
+
+function getProjectFileExtension(fileName) {
+  const extension = String(fileName || "").split(".").pop();
+  return extension && extension !== fileName ? extension.slice(0, 4).toUpperCase() : "FILE";
+}
+
+function getProjectFileTypeLabel(fileName) {
+  const extension = getProjectFileExtension(fileName).toLowerCase();
+  const labels = {
+    docx: "Word資料",
+    html: "HTML資料",
+    pdf: "PDF資料",
+    xlsx: "Spreadsheet",
+    md: "メモ",
+  };
+  return labels[extension] || "制作ファイル";
 }
 
 function closeProjectDrawer() {
