@@ -790,6 +790,7 @@ function getManagementStatusLabel(status) {
 }
 
 let adminCases = [];
+let projectIndex = [];
 
 async function loadAdminCases() {
   const keyInput = document.getElementById("admin-key");
@@ -815,6 +816,7 @@ async function loadAdminCases() {
     url.searchParams.set("action", "list");
     url.searchParams.set("adminKey", adminKey);
     const result = await fetchJson(url.toString());
+    projectIndex = await loadProjectIndex();
     adminCases = (result.items || []).map(normalizeAdminCase);
     renderAdminStats(adminCases);
     renderAdminFilters(adminCases);
@@ -827,17 +829,46 @@ async function loadAdminCases() {
   }
 }
 
+async function loadProjectIndex() {
+  try {
+    const response = await fetch("./projects/index.json", { cache: "no-store" });
+    if (!response.ok) return [];
+    const result = await response.json();
+    return result.projects || [];
+  } catch (error) {
+    console.warn("制作フォルダー構成を読み込めませんでした", error);
+    return [];
+  }
+}
+
 function normalizeAdminCase(item) {
   const answerJson = normalizeAnswerData(item.answerJson || {});
   const reviewCount = getReviewNeededItems(answerJson).length;
+  const project = findProjectForCase(item, answerJson);
   return {
     ...item,
     answerJson,
+    project,
     reviewCount,
     companyName: item.companyName || answerJson.customer.companyName || "会社名未入力",
     contactName: item.contactName || answerJson.customer.contactName || "",
     meetingUrl: item.meetingUrl || buildMeetingUrlForAdmin(item.uuid)
   };
+}
+
+function normalizeProjectName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/株式会社|有限会社|\s|　/g, "");
+}
+
+function findProjectForCase(item, answerJson) {
+  const companyName = item.companyName || answerJson.customer?.companyName || "";
+  const normalized = normalizeProjectName(companyName);
+  return projectIndex.find((project) => {
+    const projectName = normalizeProjectName(project.companyName);
+    return normalized && projectName && (normalized.includes(projectName) || projectName.includes(normalized));
+  }) || null;
 }
 
 function buildMeetingUrlForAdmin(uuid) {
@@ -894,9 +925,60 @@ function renderAdminCard(item) {
       </div>
       <div class="admin-card-actions">
         ${item.meetingUrl ? `<a class="admin-primary-button" href="${escapeHtml(item.meetingUrl)}">打ち合わせ</a>` : ""}
+        ${item.project ? `<button type="button" class="admin-secondary-button" data-project-id="${escapeHtml(item.project.id)}">制作フォルダー</button>` : ""}
       </div>
     </article>
   `;
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-project-id]");
+  if (!button) return;
+  const project = projectIndex.find((entry) => entry.id === button.dataset.projectId);
+  if (project) openProjectDrawer(project);
+});
+
+function openProjectDrawer(project) {
+  closeProjectDrawer();
+  const drawer = document.createElement("aside");
+  drawer.className = "project-drawer";
+  drawer.id = "project-drawer";
+  drawer.innerHTML = `
+    <button type="button" class="project-drawer-backdrop" aria-label="閉じる"></button>
+    <section class="project-drawer-panel" aria-label="${escapeHtml(project.companyName)}の制作フォルダー">
+      <header class="project-drawer-header">
+        <div>
+          <p>制作フォルダー</p>
+          <h2>${escapeHtml(project.companyName)}</h2>
+          <span>${escapeHtml(project.folder)}</span>
+        </div>
+        <button type="button" class="project-drawer-close" aria-label="閉じる">×</button>
+      </header>
+      <div class="project-section-list">
+        ${project.sections.map((section) => `
+          <article class="project-section-card">
+            <div>
+              <p>${escapeHtml(section.name)}</p>
+              <h3>${escapeHtml(section.label)}</h3>
+              <span>${escapeHtml(section.description)}</span>
+            </div>
+            ${
+              section.files.length
+                ? `<ul>${section.files.map((file) => `<li>${escapeHtml(file)}</li>`).join("")}</ul>`
+                : '<p class="project-empty">まだファイルはありません</p>'
+            }
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+  document.body.appendChild(drawer);
+  drawer.querySelector(".project-drawer-backdrop").addEventListener("click", closeProjectDrawer);
+  drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
+}
+
+function closeProjectDrawer() {
+  document.getElementById("project-drawer")?.remove();
 }
 
 function renderReviewNeededLegacyPanel() {

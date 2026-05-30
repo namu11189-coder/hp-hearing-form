@@ -1,0 +1,55 @@
+{
+  "projects": [
+    {
+      "id": "arch",
+      "companyName": "株式会社Arch",
+      "folder": "projects/Arch",
+      "status": "planning",
+      "sections": [
+        {
+          "name": "01_hearing",
+          "label": "ヒアリング資料",
+          "description": "お客様回答、打ち合わせ用資料、印刷用資料を保管します。",
+          "files": [
+            "株式会社Arch_ヒアリング内容_打ち合わせ用.docx",
+            "株式会社Arch_ヒアリング内容_打ち合わせ用.html",
+            "株式会社Arch_ヒアリング内容_印刷用_簡易版.docx",
+            "株式会社Arch_ヒアリング内容_印刷用_簡易版.html",
+            "株式会社Arch_ヒアリング内容_印刷用_簡易版_修正.docx",
+            "株式会社Arch_ヒアリング内容_印刷用_簡易版_修正.html"
+          ]
+        },
+        {
+          "name": "02_notes",
+          "label": "案件整理メモ",
+          "description": "制作側で使う要件整理、打ち合わせメモ、決定事項を保管します。",
+          "files": []
+        },
+        {
+          "name": "03_proposal",
+          "label": "提案資料",
+          "description": "初回返信文、提案書たたき台、構成提案を保管します。",
+          "files": []
+        },
+        {
+          "name": "04_site-plan",
+          "label": "サイト構成案",
+          "description": "ページ構成、ワイヤーフレーム、導線案を保管します。",
+          "files": []
+        },
+        {
+          "name": "05_estimate",
+          "label": "見積前確認",
+          "description": "見積もり前の確認事項、制作範囲、素材状況を保管します。",
+          "files": []
+        },
+        {
+          "name": "06_deliverables",
+          "label": "納品物",
+          "description": "公開用データ、納品ファイル、最終確認資料を保管します。",
+          "files": []
+        }
+      ]
+    }
+  ]
+}
