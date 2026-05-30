@@ -464,11 +464,11 @@ function createMeetingBanner() {
       <p class="meeting-meta" id="meeting-meta">${escapeHtml(getMeetingClientLabel())}</p>
     </div>
     <div class="meeting-actions">
-      <button type="button" class="button secondary icon-text-button" id="meeting-reload">
+      <button type="button" class="button secondary icon-text-button" id="meeting-reload" aria-label="回答を再読み込み">
         <span class="button-icon" aria-hidden="true">${refreshIconSvg()}</span>
         <span>再読み込み</span>
       </button>
-      <button type="button" class="button primary icon-text-button" id="meeting-save">
+      <button type="button" class="button primary icon-text-button" id="meeting-save" aria-label="打ち合わせ内容を保存">
         <span class="button-icon" aria-hidden="true">${saveIconSvg()}</span>
         <span>保存</span>
       </button>
