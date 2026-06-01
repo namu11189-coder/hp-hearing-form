@@ -477,6 +477,10 @@ h1 {
   grid-template-columns: 248px 1fr;
 }
 
+body.is-company-management-open {
+  overflow: hidden;
+}
+
 .admin-sidebar {
   position: sticky;
   top: 0;
@@ -709,23 +713,24 @@ h1 {
 .project-drawer {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 100;
+  background: #eef1ec;
 }
 
 .project-drawer-backdrop {
-  position: absolute;
-  inset: 0;
+  display: none;
   border: 0;
-  background: rgba(17, 23, 20, 0.48);
+  background: transparent;
 }
 
 .project-drawer-panel {
   position: absolute;
-  inset: 0 0 0 auto;
-  width: min(100%, 920px);
+  inset: 0;
+  width: 100%;
+  min-height: 100dvh;
   overflow: auto;
   background: #eef1ec;
-  box-shadow: -24px 0 60px rgba(17, 23, 20, 0.22);
+  box-shadow: none;
 }
 
 .project-drawer-header {
@@ -776,7 +781,7 @@ h1 {
 
 .project-explorer {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr);
   min-height: calc(100dvh - 101px);
 }
 
@@ -906,7 +911,7 @@ h1 {
 }
 
 .project-file-pane {
-  padding: 18px;
+  padding: 22px;
 }
 
 .project-file-pane-header {

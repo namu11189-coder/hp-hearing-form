@@ -992,6 +992,7 @@ function openCompanyDrawer(item) {
       </div>
     </section>
   `;
+  document.body.classList.add("is-company-management-open");
   document.body.appendChild(drawer);
   drawer.querySelector(".project-drawer-backdrop").addEventListener("click", closeProjectDrawer);
   drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
@@ -1114,6 +1115,7 @@ function getProjectFileTypeLabel(fileName) {
 
 function closeProjectDrawer() {
   document.getElementById("project-drawer")?.remove();
+  document.body.classList.remove("is-company-management-open");
 }
 
 function renderReviewNeededLegacyPanel() {
