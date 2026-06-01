@@ -610,17 +610,23 @@ h1 {
   font-weight: 900;
 }
 
-.admin-secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  border: 1px solid #cbd3c7;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #111714;
-  padding: 10px 16px;
-  font-weight: 900;
+.admin-company-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-company-button:hover,
+.admin-company-button:focus-visible {
+  color: #075f55;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .admin-stats {
@@ -2265,8 +2271,7 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .admin-primary-button,
-  .admin-secondary-button {
+  .admin-primary-button {
     width: 100%;
   }
 

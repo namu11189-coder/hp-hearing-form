@@ -908,11 +908,14 @@ function renderAdminList() {
 }
 
 function renderAdminCard(item) {
+  const companyName = item.project
+    ? `<button type="button" class="admin-company-button" data-project-id="${escapeHtml(item.project.id)}">${escapeHtml(item.companyName)}</button>`
+    : escapeHtml(item.companyName);
   return `
     <article class="admin-card">
       <div class="admin-card-main">
         <p class="admin-card-date">${escapeHtml(item.submittedAt || "送信日時なし")}</p>
-        <h2>${escapeHtml(item.companyName)}</h2>
+        <h2>${companyName}</h2>
         <p>${escapeHtml(item.contactName ? `${item.contactName} 様` : "担当者名未入力")}</p>
         <div class="admin-card-meta">
           <span>${escapeHtml(getManagementStatusLabel(item.managementStatus))}</span>
@@ -925,7 +928,6 @@ function renderAdminCard(item) {
       </div>
       <div class="admin-card-actions">
         ${item.meetingUrl ? `<a class="admin-primary-button" href="${escapeHtml(item.meetingUrl)}">打ち合わせ</a>` : ""}
-        ${item.project ? `<button type="button" class="admin-secondary-button" data-project-id="${escapeHtml(item.project.id)}">制作フォルダー</button>` : ""}
       </div>
     </article>
   `;
