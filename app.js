@@ -908,61 +908,75 @@ function renderAdminList() {
 }
 
 function renderAdminCard(item) {
-  const companyName = item.project
-    ? `<button type="button" class="admin-company-button" data-project-id="${escapeHtml(item.project.id)}">${escapeHtml(item.companyName)}</button>`
-    : escapeHtml(item.companyName);
   return `
     <article class="admin-card">
-      <div class="admin-card-main">
-        <p class="admin-card-date">${escapeHtml(item.submittedAt || "送信日時なし")}</p>
-        <h2>${companyName}</h2>
-        <p>${escapeHtml(item.contactName ? `${item.contactName} 様` : "担当者名未入力")}</p>
-        <div class="admin-card-meta">
-          <span>${escapeHtml(getManagementStatusLabel(item.managementStatus))}</span>
-          <span>確認事項 ${item.reviewCount}件</span>
-        </div>
-      </div>
-      <div class="admin-card-contact">
-        <p>${escapeHtml(item.email || "メール未入力")}</p>
-        <p>${escapeHtml(item.phone || "電話番号未入力")}</p>
-      </div>
-      <div class="admin-card-actions">
-        ${item.meetingUrl ? `<a class="admin-primary-button" href="${escapeHtml(item.meetingUrl)}">打ち合わせ</a>` : ""}
-      </div>
+      <button type="button" class="admin-company-card-button" data-case-uuid="${escapeHtml(item.uuid || "")}">
+        ${escapeHtml(item.companyName)}
+      </button>
     </article>
   `;
 }
 
 document.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-project-id]");
-  if (!button) return;
-  const project = projectIndex.find((entry) => entry.id === button.dataset.projectId);
-  if (project) openProjectDrawer(project);
+  const caseButton = event.target.closest("[data-case-uuid]");
+  if (caseButton) {
+    const item = adminCases.find((entry) => entry.uuid === caseButton.dataset.caseUuid);
+    if (item) openCompanyDrawer(item);
+    return;
+  }
+
+  const projectButton = event.target.closest("[data-project-id]");
+  if (!projectButton) return;
+  const project = projectIndex.find((entry) => entry.id === projectButton.dataset.projectId);
+  if (project) openCompanyDrawer({ companyName: project.companyName, project });
 });
 
-function openProjectDrawer(project) {
+function openCompanyDrawer(item) {
   closeProjectDrawer();
-  const sections = project.sections || [];
+  const project = item.project;
+  const sections = project?.sections || [];
   const firstSection = sections[0] || { name: "", label: "", description: "", files: [] };
   const drawer = document.createElement("aside");
   drawer.className = "project-drawer";
   drawer.id = "project-drawer";
   drawer.innerHTML = `
     <button type="button" class="project-drawer-backdrop" aria-label="閉じる"></button>
-    <section class="project-drawer-panel" aria-label="${escapeHtml(project.companyName)}の制作フォルダー">
+    <section class="project-drawer-panel" aria-label="${escapeHtml(item.companyName)}の案件管理">
       <header class="project-drawer-header">
         <div>
-          <p>制作フォルダー</p>
-          <h2>${escapeHtml(project.companyName)}</h2>
-          <span>${escapeHtml(project.folder)}</span>
+          <p>案件管理</p>
+          <h2>${escapeHtml(item.companyName)}</h2>
+          <span>${escapeHtml(getManagementStatusLabel(item.managementStatus || "unreviewed"))} / 確認事項 ${item.reviewCount || 0}件</span>
         </div>
         <button type="button" class="project-drawer-close" aria-label="閉じる">×</button>
       </header>
       <div class="project-explorer">
-        <nav class="project-tree" aria-label="制作フォルダー一覧">
-          <p class="project-tree-root">${escapeHtml(project.folder)}</p>
+        <nav class="project-tree" aria-label="案件管理メニュー">
+          <p class="project-tree-root">${escapeHtml(item.companyName)}</p>
+          <button type="button" class="project-tree-item is-active" data-company-pane="overview">
+            <span class="project-folder-icon is-info" aria-hidden="true"></span>
+            <span>
+              <strong>基本情報</strong>
+              <small>customer</small>
+            </span>
+          </button>
+          <button type="button" class="project-tree-item" data-company-pane="meeting">
+            <span class="project-folder-icon is-link" aria-hidden="true"></span>
+            <span>
+              <strong>フォーム</strong>
+              <small>meeting link</small>
+            </span>
+          </button>
+          <button type="button" class="project-tree-item" data-project-section="${escapeHtml(firstSection.name)}"${project ? "" : " disabled"}>
+            <span class="project-folder-icon" aria-hidden="true"></span>
+            <span>
+              <strong>ファイル構成</strong>
+              <small>${escapeHtml(project?.folder || "未設定")}</small>
+            </span>
+            <em>${sections.reduce((sum, section) => sum + section.files.length, 0)}</em>
+          </button>
           ${sections.map((section, index) => `
-            <button type="button" class="project-tree-item${index === 0 ? " is-active" : ""}" data-project-section="${escapeHtml(section.name)}">
+            <button type="button" class="project-tree-item project-tree-child" data-project-section="${escapeHtml(section.name)}">
               <span class="project-folder-icon" aria-hidden="true"></span>
               <span>
                 <strong>${escapeHtml(section.label)}</strong>
@@ -973,7 +987,7 @@ function openProjectDrawer(project) {
           `).join("")}
         </nav>
         <section class="project-file-pane" aria-live="polite">
-          ${renderProjectFilePane(firstSection)}
+          ${renderCompanyOverviewPane(item)}
         </section>
       </div>
     </section>
@@ -981,15 +995,72 @@ function openProjectDrawer(project) {
   document.body.appendChild(drawer);
   drawer.querySelector(".project-drawer-backdrop").addEventListener("click", closeProjectDrawer);
   drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
+  drawer.querySelectorAll("[data-company-pane]").forEach((button) => {
+    button.addEventListener("click", () => {
+      drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+      drawer.querySelector(".project-file-pane").innerHTML = button.dataset.companyPane === "meeting"
+        ? renderCompanyMeetingPane(item)
+        : renderCompanyOverviewPane(item);
+    });
+  });
   drawer.querySelectorAll("[data-project-section]").forEach((button) => {
     button.addEventListener("click", () => {
       const section = sections.find((entry) => entry.name === button.dataset.projectSection);
       if (!section) return;
-      drawer.querySelectorAll("[data-project-section]").forEach((item) => item.classList.remove("is-active"));
+      drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
       drawer.querySelector(".project-file-pane").innerHTML = renderProjectFilePane(section);
     });
   });
+}
+
+function renderCompanyOverviewPane(item) {
+  return `
+    <div class="project-file-pane-header">
+      <div>
+        <p>overview</p>
+        <h3>基本情報</h3>
+        <span>回答者と案件の状態をここで確認します。</span>
+      </div>
+      <strong>${escapeHtml(getManagementStatusLabel(item.managementStatus || "unreviewed"))}</strong>
+    </div>
+    <div class="company-detail-grid">
+      ${renderCompanyDetail("会社名", item.companyName)}
+      ${renderCompanyDetail("担当者", item.contactName ? `${item.contactName} 様` : "担当者名未入力")}
+      ${renderCompanyDetail("メール", item.email || "メール未入力")}
+      ${renderCompanyDetail("電話番号", item.phone || "電話番号未入力")}
+      ${renderCompanyDetail("送信日時", item.submittedAt || "送信日時なし")}
+      ${renderCompanyDetail("確認事項", `${item.reviewCount || 0}件`)}
+    </div>
+  `;
+}
+
+function renderCompanyDetail(label, value) {
+  return `
+    <article class="company-detail-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `;
+}
+
+function renderCompanyMeetingPane(item) {
+  return `
+    <div class="project-file-pane-header">
+      <div>
+        <p>form</p>
+        <h3>フォーム・打ち合わせ</h3>
+        <span>回答内容を開いて、打ち合わせで編集・確認します。</span>
+      </div>
+    </div>
+    <div class="company-action-list">
+      ${item.meetingUrl ? `<a class="company-action-card" href="${escapeHtml(item.meetingUrl)}">
+        <span>打ち合わせフォーム</span>
+        <strong>回答内容を開く</strong>
+      </a>` : `<div class="project-empty-state"><p>打ち合わせリンクがありません</p><span>Spreadsheet側の打ち合わせ用リンク列を確認してください。</span></div>`}
+    </div>
+  `;
 }
 
 function renderProjectFilePane(section) {

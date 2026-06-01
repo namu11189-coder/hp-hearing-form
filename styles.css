@@ -610,25 +610,6 @@ h1 {
   font-weight: 900;
 }
 
-.admin-company-button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font: inherit;
-  font-weight: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.admin-company-button:hover,
-.admin-company-button:focus-visible {
-  color: #075f55;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -689,11 +670,7 @@ h1 {
 }
 
 .admin-card {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr auto;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
+  padding: 0;
 }
 
 .admin-card-date {
@@ -708,40 +685,25 @@ h1 {
   margin: 0;
 }
 
-.admin-card h2 {
-  font-size: 1.18rem;
+.admin-company-card-button {
+  display: block;
+  width: 100%;
+  min-height: 74px;
+  border: 0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111714;
+  padding: 20px 22px;
+  font-size: 1.28rem;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
 }
 
-.admin-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.admin-card-meta span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  border-radius: 999px;
-  background: #e5f1ef;
-  color: #084b46;
-  padding: 3px 10px;
-  font-size: 0.82rem;
-  font-weight: 850;
-}
-
-.admin-card-contact {
-  display: grid;
-  gap: 3px;
-  color: #697067;
-  font-size: 0.9rem;
-}
-
-.admin-card-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.admin-company-card-button:hover,
+.admin-company-card-button:focus-visible {
+  background: #f7faf7;
+  color: #075f55;
 }
 
 .project-drawer {
@@ -854,8 +816,18 @@ h1 {
   background: #e4ebe6;
 }
 
+.project-tree-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .project-tree-item.is-active {
   color: #075f55;
+}
+
+.project-tree-child {
+  margin-left: 20px;
+  width: calc(100% - 20px);
 }
 
 .project-folder-icon {
@@ -875,6 +847,31 @@ h1 {
   height: 7px;
   border-radius: 4px 4px 0 0;
   background: #2c8f83;
+}
+
+.project-folder-icon.is-info {
+  border-radius: 999px;
+}
+
+.project-folder-icon.is-info::before {
+  display: none;
+}
+
+.project-folder-icon.is-link {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #111714;
+}
+
+.project-folder-icon.is-link::before {
+  top: 6px;
+  left: 6px;
+  width: 12px;
+  height: 6px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: transparent;
 }
 
 .project-tree-item strong,
@@ -1018,6 +1015,73 @@ h1 {
   color: #111714;
   font-size: 1.05rem;
   font-weight: 900;
+}
+
+.company-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.company-detail-card {
+  border: 1px solid #d8ddd4;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.company-detail-card span,
+.company-detail-card strong {
+  display: block;
+}
+
+.company-detail-card span {
+  color: #697067;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.company-detail-card strong {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 1.04rem;
+}
+
+.company-action-list {
+  display: grid;
+  gap: 10px;
+}
+
+.company-action-card {
+  display: block;
+  border: 1px solid #d8ddd4;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111714;
+  padding: 18px;
+  text-decoration: none;
+}
+
+.company-action-card:hover,
+.company-action-card:focus-visible {
+  border-color: #0b6b63;
+  color: #075f55;
+}
+
+.company-action-card span,
+.company-action-card strong {
+  display: block;
+}
+
+.company-action-card span {
+  color: #697067;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.company-action-card strong {
+  margin-top: 4px;
+  font-size: 1.2rem;
 }
 
 .step-header {
@@ -2266,11 +2330,6 @@ summary:focus-visible {
     gap: 12px;
   }
 
-  .admin-card-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
   .admin-primary-button {
     width: 100%;
   }
@@ -2305,6 +2364,11 @@ summary:focus-visible {
     min-width: 220px;
   }
 
+  .project-tree-child {
+    margin-left: 0;
+    width: auto;
+  }
+
   .project-file-pane {
     padding: 12px;
   }
@@ -2313,6 +2377,10 @@ summary:focus-visible {
     display: grid;
     gap: 10px;
     padding: 14px;
+  }
+
+  .company-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   h1 {
