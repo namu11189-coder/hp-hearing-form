@@ -1130,7 +1130,7 @@ function renderCompanyAiRequirementsPane(item) {
       <div>
         <p>ai prompt</p>
         <h3>AI要件定義</h3>
-        <span>AIに貼り付けるための材料を、案件情報とフォーム回答から自動生成します。</span>
+        <span>AIに貼り付けるための材料を、案件情報・要約・フォーム全回答から自動生成します。</span>
       </div>
       <button type="button" class="company-action-mini-button" data-copy-ai-prompt>AI用プロンプトをコピー</button>
     </div>
@@ -1138,7 +1138,7 @@ function renderCompanyAiRequirementsPane(item) {
       <article class="ai-requirements-guide">
         <span>出力してほしい成果物</span>
         <strong>要件定義書 / サイト構成案 / 未確定事項 / 次回質問リスト</strong>
-        <p>このプロンプトをAIへ投げると、打ち合わせ前に叩き台を作れる想定です。回答内容を更新したら、この画面も開き直してください。</p>
+        <p>このプロンプトにはフォーム全回答も含めます。AIへ投げると、取りこぼしを抑えながら打ち合わせ前の叩き台を作れます。</p>
       </article>
       <textarea id="ai-requirements-prompt" class="ai-requirements-prompt" readonly>${escapeHtml(prompt)}</textarea>
     </div>
@@ -1197,6 +1197,12 @@ function buildAiRequirementsPrompt(item) {
     `案件フォルダー: ${project.folder || "未設定"}`,
     `保管ファイル: ${files.length ? files.join(" / ") : "なし"}`,
     "",
+    "## フォーム全回答",
+    buildFullAnswerText(data),
+    "",
+    "## フォーム全回答JSON",
+    JSON.stringify(data, null, 2),
+    "",
     "## 未確定・相談希望・未入力項目",
     reviewItems.length
       ? reviewItems.map((entry) => `- ${entry.label}: ${entry.value}`).join("\n")
@@ -1208,6 +1214,45 @@ function buildAiRequirementsPrompt(item) {
     "お客様にそのまま見せても違和感のない、丁寧で実務的な日本語で出力してください。"
   ];
   return lines.join("\n");
+}
+
+function buildFullAnswerText(data) {
+  return steps
+    .filter((step) => step.fields.length)
+    .map((step) => {
+      const answers = step.fields.map((field) => {
+        const value = getDisplayValueFromData(data, step.id, field);
+        return `- ${field.label}: ${value || "未入力"}`;
+      });
+      return [`### ${step.title}`, ...answers].join("\n");
+    })
+    .join("\n\n");
+}
+
+function getDisplayValueFromData(data, stepId, field) {
+  const value = getValueFromData(data, stepId, field.key);
+  if (field.type === "checkboxes") {
+    return labelsFromOptions(field.options, value).join("、");
+  }
+  if (field.type === "radio") {
+    return labelsFromOptions(field.options, [value]).join("、");
+  }
+  if (field.type === "tri") {
+    return Object.entries(value || {})
+      .map(([label, item]) => `${label}: ${item?.display || getTriDisplayLabel(item) || "未入力"}`)
+      .join(" / ");
+  }
+  if (Array.isArray(value)) return value.join("\n");
+  return String(value ?? "").trim();
+}
+
+function getTriDisplayLabel(item) {
+  const labels = {
+    needed: "必要",
+    not_needed: "不要",
+    undecided: "未定"
+  };
+  return labels[item?.value] || labels[item] || "";
 }
 
 async function copyTextToClipboard(text) {
