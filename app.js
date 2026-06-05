@@ -1130,15 +1130,15 @@ function renderCompanyAiRequirementsPane(item) {
       <div>
         <p>ai prompt</p>
         <h3>AI要件定義</h3>
-        <span>AIに貼り付けるための材料を、案件情報・要約・フォーム全回答から自動生成します。</span>
+        <span>打ち合わせで編集した最新版の回答をもとに、AIへ渡す材料を自動生成します。</span>
       </div>
       <button type="button" class="company-action-mini-button" data-copy-ai-prompt>AI用プロンプトをコピー</button>
     </div>
     <div class="ai-requirements-layout">
       <article class="ai-requirements-guide">
         <span>出力してほしい成果物</span>
-        <strong>要件定義書 / サイト構成案 / 未確定事項 / 次回質問リスト</strong>
-        <p>このプロンプトにはフォーム全回答も含めます。AIへ投げると、取りこぼしを抑えながら打ち合わせ前の叩き台を作れます。</p>
+        <strong>要件定義草案 / サイト構成案 / 確認事項 / クライアント質問リスト</strong>
+        <p>このプロンプトは、初回回答ではなく打ち合わせ後に保存された最新版を正として扱います。あなた・クライアント・AIで詰めるための叩き台作成用です。</p>
       </article>
       <textarea id="ai-requirements-prompt" class="ai-requirements-prompt" readonly>${escapeHtml(prompt)}</textarea>
     </div>
@@ -1157,18 +1157,23 @@ function buildAiRequirementsPrompt(item) {
   const files = sections.flatMap((section) => (section.files || []).map((file) => `${section.label}: ${file}`));
   const lines = [
     "あなたはWeb制作の要件定義を行うディレクターです。",
-    "以下の案件情報とフォーム回答をもとに、打ち合わせで使える要件定義の叩き台を作成してください。",
+    "以下の情報は、初回フォーム回答に対して制作者が打ち合わせで追記・修正した最新版です。",
+    "この最新版を正として、制作者・クライアント・AIで要件定義を詰めるための叩き台を作成してください。",
+    "未確定事項は断定せず、仮説・確認質問・次の判断材料に分けてください。",
     "",
     "## 出力してほしい内容",
     "1. 案件概要",
-    "2. サイトの目的と優先順位",
-    "3. 想定ターゲット",
-    "4. 推奨ページ構成",
-    "5. 必要機能と不要/保留機能",
-    "6. デザイン方向性",
-    "7. 素材・原稿・写真の不足確認",
-    "8. 未確定事項と次回打ち合わせで聞く質問",
-    "9. 見積前に確定すべき制作範囲",
+    "2. 現時点で確定してよさそうな事項",
+    "3. 仮決定として扱う事項",
+    "4. クライアント確認が必要な事項",
+    "5. サイトの目的と優先順位",
+    "6. 想定ターゲット",
+    "7. 推奨ページ構成",
+    "8. 必要機能と不要/保留機能",
+    "9. デザイン方向性",
+    "10. 素材・原稿・写真の不足確認",
+    "11. 次回打ち合わせで聞く質問",
+    "12. 見積前に確定すべき制作範囲",
     "",
     "## 案件情報",
     `会社名: ${item.companyName || "未入力"}`,
@@ -1178,7 +1183,7 @@ function buildAiRequirementsPrompt(item) {
     `送信日時: ${item.submittedAt || "未入力"}`,
     `管理ステータス: ${getManagementStatusLabel(item.managementStatus || "unreviewed")}`,
     "",
-    "## フォーム回答の要約",
+    "## 打ち合わせ後の最新版回答の要約",
     `目的: ${formatChoiceList(data.purpose?.purpose, purposeLabelMap)}`,
     `ターゲット: ${formatAudienceSummary(data.target)}`,
     `必要ページ: ${requiredPages.length ? requiredPages.join("、") : "未整理"}`,
@@ -1197,10 +1202,10 @@ function buildAiRequirementsPrompt(item) {
     `案件フォルダー: ${project.folder || "未設定"}`,
     `保管ファイル: ${files.length ? files.join(" / ") : "なし"}`,
     "",
-    "## フォーム全回答",
+    "## 打ち合わせ後の最新版フォーム全回答",
     buildFullAnswerText(data),
     "",
-    "## フォーム全回答JSON",
+    "## 打ち合わせ後の最新版フォーム全回答JSON",
     JSON.stringify(data, null, 2),
     "",
     "## 未確定・相談希望・未入力項目",
@@ -1209,7 +1214,8 @@ function buildAiRequirementsPrompt(item) {
       : "- 大きな未確定項目は検出されていません",
     "",
     "## 注意",
-    "未確定事項は勝手に断定せず、仮説と確認質問に分けてください。",
+    "この情報は打ち合わせで制作者が編集した最新版です。初回回答と矛盾している可能性がある場合も、ここに記載された最新版を優先してください。",
+    "未確定事項は勝手に断定せず、確定・仮決定・要確認に分けてください。",
     "見積や制作範囲に影響する項目は優先度高めで整理してください。",
     "お客様にそのまま見せても違和感のない、丁寧で実務的な日本語で出力してください。"
   ];
