@@ -967,6 +967,13 @@ function openCompanyDrawer(item) {
               <small>requirements</small>
             </span>
           </button>
+          <button type="button" class="project-tree-item" data-company-pane="aiRequirements">
+            <span class="project-folder-icon is-ai" aria-hidden="true"></span>
+            <span>
+              <strong>AI要件定義</strong>
+              <small>prompt</small>
+            </span>
+          </button>
           <button type="button" class="project-tree-item" data-company-pane="meeting">
             <span class="project-folder-icon is-link" aria-hidden="true"></span>
             <span>
@@ -1008,6 +1015,7 @@ function openCompanyDrawer(item) {
       drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
       const panes = {
+        aiRequirements: renderCompanyAiRequirementsPane,
         meeting: renderCompanyMeetingPane,
         requirements: renderCompanyRequirementsPane,
         overview: renderCompanyOverviewPane
@@ -1023,6 +1031,17 @@ function openCompanyDrawer(item) {
       button.classList.add("is-active");
       drawer.querySelector(".project-file-pane").innerHTML = renderProjectFilePane(section);
     });
+  });
+  drawer.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-copy-ai-prompt]");
+    if (!button) return;
+    const prompt = drawer.querySelector("#ai-requirements-prompt")?.value || "";
+    if (!prompt) return;
+    await copyTextToClipboard(prompt);
+    button.textContent = "コピーしました";
+    setTimeout(() => {
+      button.textContent = "AI用プロンプトをコピー";
+    }, 1600);
   });
 }
 
@@ -1102,6 +1121,109 @@ function renderCompanyRequirementsPane(item) {
       ${renderRequirementCard("次回確認", pending.length ? pending.map((entry) => `${entry.label}: ${entry.value}`).join(" / ") : "大きな未定項目はありません", reviewItems.length > pending.length ? `ほか${reviewItems.length - pending.length}件` : "打ち合わせで確定へ")}
     </div>
   `;
+}
+
+function renderCompanyAiRequirementsPane(item) {
+  const prompt = buildAiRequirementsPrompt(item);
+  return `
+    <div class="project-file-pane-header">
+      <div>
+        <p>ai prompt</p>
+        <h3>AI要件定義</h3>
+        <span>AIに貼り付けるための材料を、案件情報とフォーム回答から自動生成します。</span>
+      </div>
+      <button type="button" class="company-action-mini-button" data-copy-ai-prompt>AI用プロンプトをコピー</button>
+    </div>
+    <div class="ai-requirements-layout">
+      <article class="ai-requirements-guide">
+        <span>出力してほしい成果物</span>
+        <strong>要件定義書 / サイト構成案 / 未確定事項 / 次回質問リスト</strong>
+        <p>このプロンプトをAIへ投げると、打ち合わせ前に叩き台を作れる想定です。回答内容を更新したら、この画面も開き直してください。</p>
+      </article>
+      <textarea id="ai-requirements-prompt" class="ai-requirements-prompt" readonly>${escapeHtml(prompt)}</textarea>
+    </div>
+  `;
+}
+
+function buildAiRequirementsPrompt(item) {
+  const data = item.answerJson || {};
+  const reviewItems = getReviewNeededItems(data);
+  const requiredPages = getTriEntries(data.contents?.contents, "needed");
+  const undecidedPages = getTriEntries(data.contents?.contents, "undecided");
+  const requiredFeatures = getTriEntries(data.features?.features, "needed");
+  const undecidedFeatures = getTriEntries(data.features?.features, "undecided");
+  const project = item.project || {};
+  const sections = project.sections || [];
+  const files = sections.flatMap((section) => (section.files || []).map((file) => `${section.label}: ${file}`));
+  const lines = [
+    "あなたはWeb制作の要件定義を行うディレクターです。",
+    "以下の案件情報とフォーム回答をもとに、打ち合わせで使える要件定義の叩き台を作成してください。",
+    "",
+    "## 出力してほしい内容",
+    "1. 案件概要",
+    "2. サイトの目的と優先順位",
+    "3. 想定ターゲット",
+    "4. 推奨ページ構成",
+    "5. 必要機能と不要/保留機能",
+    "6. デザイン方向性",
+    "7. 素材・原稿・写真の不足確認",
+    "8. 未確定事項と次回打ち合わせで聞く質問",
+    "9. 見積前に確定すべき制作範囲",
+    "",
+    "## 案件情報",
+    `会社名: ${item.companyName || "未入力"}`,
+    `担当者: ${item.contactName || "未入力"}`,
+    `メール: ${item.email || "未入力"}`,
+    `電話: ${item.phone || "未入力"}`,
+    `送信日時: ${item.submittedAt || "未入力"}`,
+    `管理ステータス: ${getManagementStatusLabel(item.managementStatus || "unreviewed")}`,
+    "",
+    "## フォーム回答の要約",
+    `目的: ${formatChoiceList(data.purpose?.purpose, purposeLabelMap)}`,
+    `ターゲット: ${formatAudienceSummary(data.target)}`,
+    `必要ページ: ${requiredPages.length ? requiredPages.join("、") : "未整理"}`,
+    `未定ページ: ${undecidedPages.length ? undecidedPages.join("、") : "なし"}`,
+    `必要機能: ${requiredFeatures.length ? requiredFeatures.join("、") : "未整理"}`,
+    `未定機能: ${undecidedFeatures.length ? undecidedFeatures.join("、") : "なし"}`,
+    `デザイン: ${formatDesignSummary(data.design)}`,
+    `素材: ${formatMaterialSummary(data.materials, project)}`,
+    `公開・運用: ${formatOperationSummary(data.operation, data.scheduleBudgetServer)}`,
+    "",
+    "## 会社・素材・補足",
+    `事業内容: ${data.customer?.businessDescription || "未入力"}`,
+    `現在のホームページURL: ${data.customer?.currentWebsiteUrl || "未入力"}`,
+    `SNS情報: ${data.customer?.sns || "未入力"}`,
+    `補足事項: ${data.customer?.notes || "未入力"}`,
+    `案件フォルダー: ${project.folder || "未設定"}`,
+    `保管ファイル: ${files.length ? files.join(" / ") : "なし"}`,
+    "",
+    "## 未確定・相談希望・未入力項目",
+    reviewItems.length
+      ? reviewItems.map((entry) => `- ${entry.label}: ${entry.value}`).join("\n")
+      : "- 大きな未確定項目は検出されていません",
+    "",
+    "## 注意",
+    "未確定事項は勝手に断定せず、仮説と確認質問に分けてください。",
+    "見積や制作範囲に影響する項目は優先度高めで整理してください。",
+    "お客様にそのまま見せても違和感のない、丁寧で実務的な日本語で出力してください。"
+  ];
+  return lines.join("\n");
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
 }
 
 function renderRequirementCard(title, body, note) {

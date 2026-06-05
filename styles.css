@@ -896,6 +896,22 @@ body.is-company-management-open {
   box-shadow: 0 6px 0 #111714, 0 12px 0 #111714;
 }
 
+.project-folder-icon.is-ai {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #111714;
+}
+
+.project-folder-icon.is-ai::before {
+  top: 5px;
+  left: 5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f0c400, #0b6b63);
+}
+
 .project-tree-item strong,
 .project-tree-item small,
 .project-tree-item em {
@@ -1106,6 +1122,16 @@ body.is-company-management-open {
   font-size: 1.2rem;
 }
 
+.company-action-mini-button {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 6px;
+  background: #111714;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 900;
+}
+
 .requirements-board {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1146,6 +1172,58 @@ body.is-company-management-open {
   color: #697067;
   font-size: 0.88rem;
   line-height: 1.55;
+}
+
+.ai-requirements-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ai-requirements-guide {
+  align-self: start;
+  border: 1px solid #d8ddd4;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.ai-requirements-guide span,
+.ai-requirements-guide strong,
+.ai-requirements-guide p {
+  display: block;
+  margin: 0;
+}
+
+.ai-requirements-guide span {
+  color: #0b6b63;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.ai-requirements-guide strong {
+  margin-top: 8px;
+  line-height: 1.55;
+}
+
+.ai-requirements-guide p {
+  margin-top: 12px;
+  color: #697067;
+  line-height: 1.65;
+}
+
+.ai-requirements-prompt {
+  width: 100%;
+  min-height: 620px;
+  border: 1px solid #d8ddd4;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111714;
+  padding: 18px;
+  font-family: "Consolas", "Menlo", monospace;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  resize: vertical;
 }
 
 .step-header {
@@ -2449,6 +2527,14 @@ summary:focus-visible {
 
   .requirements-board {
     grid-template-columns: 1fr;
+  }
+
+  .ai-requirements-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-requirements-prompt {
+    min-height: 520px;
   }
 
   h1 {
