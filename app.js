@@ -960,6 +960,13 @@ function openCompanyDrawer(item) {
               <small>customer</small>
             </span>
           </button>
+          <button type="button" class="project-tree-item" data-company-pane="requirements">
+            <span class="project-folder-icon is-requirements" aria-hidden="true"></span>
+            <span>
+              <strong>要件定義</strong>
+              <small>requirements</small>
+            </span>
+          </button>
           <button type="button" class="project-tree-item" data-company-pane="meeting">
             <span class="project-folder-icon is-link" aria-hidden="true"></span>
             <span>
@@ -1000,9 +1007,12 @@ function openCompanyDrawer(item) {
     button.addEventListener("click", () => {
       drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
-      drawer.querySelector(".project-file-pane").innerHTML = button.dataset.companyPane === "meeting"
-        ? renderCompanyMeetingPane(item)
-        : renderCompanyOverviewPane(item);
+      const panes = {
+        meeting: renderCompanyMeetingPane,
+        requirements: renderCompanyRequirementsPane,
+        overview: renderCompanyOverviewPane
+      };
+      drawer.querySelector(".project-file-pane").innerHTML = (panes[button.dataset.companyPane] || renderCompanyOverviewPane)(item);
     });
   });
   drawer.querySelectorAll("[data-project-section]").forEach((button) => {
@@ -1062,6 +1072,163 @@ function renderCompanyMeetingPane(item) {
       </a>` : `<div class="project-empty-state"><p>打ち合わせリンクがありません</p><span>Spreadsheet側の打ち合わせ用リンク列を確認してください。</span></div>`}
     </div>
   `;
+}
+
+function renderCompanyRequirementsPane(item) {
+  const data = item.answerJson || {};
+  const reviewItems = getReviewNeededItems(data);
+  const requiredPages = getTriEntries(data.contents?.contents, "needed");
+  const undecidedPages = getTriEntries(data.contents?.contents, "undecided");
+  const requiredFeatures = getTriEntries(data.features?.features, "needed");
+  const undecidedFeatures = getTriEntries(data.features?.features, "undecided");
+  const pending = reviewItems.slice(0, 8);
+  return `
+    <div class="project-file-pane-header">
+      <div>
+        <p>requirements</p>
+        <h3>要件定義</h3>
+        <span>フォーム回答を制作側の判断材料に整理しています。打ち合わせで詰める項目もここで確認します。</span>
+      </div>
+      <strong>${pending.length ? `確認 ${reviewItems.length}件` : "整理中"}</strong>
+    </div>
+    <div class="requirements-board">
+      ${renderRequirementCard("目的", formatChoiceList(data.purpose?.purpose, purposeLabelMap), "ホームページで達成したいこと")}
+      ${renderRequirementCard("ターゲット", formatAudienceSummary(data.target), "誰に向けて伝えるか")}
+      ${renderRequirementCard("ページ構成", requiredPages.length ? requiredPages.join("、") : "必要ページは打ち合わせで整理", undecidedPages.length ? `未定: ${undecidedPages.join("、")}` : "未定ページなし")}
+      ${renderRequirementCard("必要機能", requiredFeatures.length ? requiredFeatures.join("、") : "必要機能は打ち合わせで整理", undecidedFeatures.length ? `未定: ${undecidedFeatures.join("、")}` : "未定機能なし")}
+      ${renderRequirementCard("デザイン", formatDesignSummary(data.design), "雰囲気・色・参考サイト")}
+      ${renderRequirementCard("素材", formatMaterialSummary(data.materials, item.project), "ロゴ、写真、文章、既存資料")}
+      ${renderRequirementCard("公開・運用", formatOperationSummary(data.operation, data.scheduleBudgetServer), "公開時期、更新方法、サーバー")}
+      ${renderRequirementCard("次回確認", pending.length ? pending.map((entry) => `${entry.label}: ${entry.value}`).join(" / ") : "大きな未定項目はありません", reviewItems.length > pending.length ? `ほか${reviewItems.length - pending.length}件` : "打ち合わせで確定へ")}
+    </div>
+  `;
+}
+
+function renderRequirementCard(title, body, note) {
+  return `
+    <article class="requirement-card">
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(body || "未入力")}</strong>
+      <p>${escapeHtml(note || "")}</p>
+    </article>
+  `;
+}
+
+function getTriEntries(source, expected) {
+  if (!source || typeof source !== "object") return [];
+  return Object.entries(source)
+    .filter(([, value]) => value === expected)
+    .map(([label]) => label);
+}
+
+const purposeLabelMap = {
+  company_intro: "会社・店舗紹介",
+  lead_generation: "お問い合わせ増加",
+  recruiting: "採用強化",
+  trust: "信頼感向上",
+  campaign_landing: "SNS・広告の受け皿",
+  business_card: "名刺代わり",
+  renewal: "既存サイトのリニューアル",
+  unknown: "未定",
+  need_consultation: "相談希望"
+};
+
+const audienceLabelMap = {
+  general_customers: "一般のお客様",
+  business_customers: "法人のお客様",
+  job_seekers: "採用応募者",
+  existing_customers: "既存のお客様",
+  partners: "取引先",
+  local_people: "地域の方",
+  unknown: "未定",
+  need_consultation: "相談希望"
+};
+
+const moodLabelMap = {
+  simple: "シンプル",
+  trustworthy: "信頼感",
+  friendly: "親しみやすい",
+  luxury: "高級感",
+  bright: "明るい",
+  calm: "落ち着いた",
+  cute: "かわいい",
+  cool: "かっこいい",
+  japanese: "和風",
+  natural: "ナチュラル",
+  unknown: "未定",
+  need_consultation: "相談希望"
+};
+
+function formatChoiceList(values, map) {
+  if (!Array.isArray(values) || !values.length) return "未入力";
+  return values.map((value) => map[value] || value).join("、");
+}
+
+function formatAudienceSummary(target = {}) {
+  const parts = [
+    formatChoiceList(target.audience, audienceLabelMap),
+    target.ageRange,
+    target.gender,
+    target.area
+  ].filter((value) => value && value !== "未定");
+  return parts.length ? parts.join(" / ") : "未入力";
+}
+
+function formatDesignSummary(design = {}) {
+  const parts = [
+    formatChoiceList(design.mood, moodLabelMap),
+    design.colors,
+    design.logo,
+    design.status
+  ].filter((value) => value && value !== "未定");
+  return parts.length ? parts.join(" / ") : "未入力";
+}
+
+function formatMaterialSummary(materials = {}, project = null) {
+  const assetCount = (project?.sections || []).find((section) => section.name === "00_brand-assets")?.files.length || 0;
+  const parts = [
+    materials.status ? getMaterialStatusLabel(materials.status) : "",
+    materials.photoNeed,
+    materials.documents,
+    assetCount ? `ブランド素材 ${assetCount}件` : ""
+  ].filter((value) => value && value !== "未定");
+  return parts.length ? parts.join(" / ") : "未入力";
+}
+
+function getMaterialStatusLabel(value) {
+  const labels = {
+    both_ready: "写真・文章ともに概ね準備済み",
+    photos_ready: "写真あり／文章は未準備",
+    text_ready: "文章あり／写真は未準備",
+    not_ready: "どちらも未準備",
+    need_consultation: "撮影・文章作成の相談希望",
+    unknown: "不明"
+  };
+  return labels[value] || value;
+}
+
+function formatOperationSummary(operation = {}, schedule = {}) {
+  const parts = [
+    getOperationPlanLabel(operation.plan),
+    operation.frequency,
+    operation.adminNeed,
+    schedule.desiredLaunch,
+    schedule.priority
+  ].filter((value) => value && value !== "未定");
+  return parts.length ? parts.join(" / ") : "未入力";
+}
+
+function getOperationPlanLabel(value) {
+  const labels = {
+    self_update: "自社で更新",
+    request_update: "制作側へ更新依頼",
+    news_only: "お知らせのみ自社更新",
+    blog_and_works: "ブログ・実績も自社更新",
+    no_update: "更新予定なし",
+    unknown: "未定",
+    need_consultation: "相談希望"
+  };
+  return labels[value] || value;
 }
 
 function renderProjectFilePane(section) {

@@ -879,6 +879,23 @@ body.is-company-management-open {
   background: transparent;
 }
 
+.project-folder-icon.is-requirements {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #f0c400;
+}
+
+.project-folder-icon.is-requirements::before {
+  top: 5px;
+  left: 5px;
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+  background: #111714;
+  box-shadow: 0 6px 0 #111714, 0 12px 0 #111714;
+}
+
 .project-tree-item strong,
 .project-tree-item small,
 .project-tree-item em {
@@ -1087,6 +1104,48 @@ body.is-company-management-open {
 .company-action-card strong {
   margin-top: 4px;
   font-size: 1.2rem;
+}
+
+.requirements-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.requirement-card {
+  min-height: 152px;
+  border: 1px solid #d8ddd4;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.requirement-card span,
+.requirement-card strong,
+.requirement-card p {
+  display: block;
+  margin: 0;
+}
+
+.requirement-card span {
+  color: #0b6b63;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.requirement-card strong {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  color: #111714;
+  font-size: 1.06rem;
+  line-height: 1.55;
+}
+
+.requirement-card p {
+  margin-top: 10px;
+  color: #697067;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .step-header {
@@ -2385,6 +2444,10 @@ summary:focus-visible {
   }
 
   .company-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .requirements-board {
     grid-template-columns: 1fr;
   }
 

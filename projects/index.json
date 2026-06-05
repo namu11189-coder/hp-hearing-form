@@ -7,6 +7,16 @@
       "status": "planning",
       "sections": [
         {
+          "name": "00_brand-assets",
+          "label": "ブランド素材",
+          "description": "ロゴ、アイコン、色味の参考になる素材を保管します。",
+          "files": [
+            "Archアイコン画像.jpg",
+            "Arch_icon_transparent.png",
+            "Arch_icon_transparent.webp"
+          ]
+        },
+        {
           "name": "01_hearing",
           "label": "ヒアリング資料",
           "description": "お客様回答、打ち合わせ用資料、印刷用資料を保管します。",
@@ -23,7 +33,9 @@
           "name": "02_notes",
           "label": "案件整理メモ",
           "description": "制作側で使う要件整理、打ち合わせメモ、決定事項を保管します。",
-          "files": []
+          "files": [
+            "Arch_要件定義メモ.md"
+          ]
         },
         {
           "name": "03_proposal",
