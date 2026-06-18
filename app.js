@@ -1014,6 +1014,7 @@ function openCompanyDrawer(item) {
     button.addEventListener("click", () => {
       drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
+      keepActiveProjectTabVisible(button);
       const panes = {
         aiRequirements: renderCompanyAiRequirementsPane,
         meeting: renderCompanyMeetingPane,
@@ -1029,6 +1030,7 @@ function openCompanyDrawer(item) {
       if (!section) return;
       drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
+      keepActiveProjectTabVisible(button);
       drawer.querySelector(".project-file-pane").innerHTML = renderProjectFilePane(section);
     });
   });
@@ -1043,6 +1045,12 @@ function openCompanyDrawer(item) {
       button.textContent = "AI用プロンプトをコピー";
     }, 1600);
   });
+}
+
+function keepActiveProjectTabVisible(button) {
+  const tree = button.closest(".project-tree");
+  if (!tree) return;
+  tree.scrollTo({ left: Math.max(0, button.offsetLeft - 12), behavior: "auto" });
 }
 
 function renderCompanyOverviewPane(item) {

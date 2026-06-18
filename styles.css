@@ -2746,3 +2746,766 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+/* 2026-06 UI refresh: generic project OS, not tied to any client brand */
+:root {
+  --bg: #f7faf6;
+  --bg-soft: #eef5f0;
+  --panel: #ffffff;
+  --paper: #ffffff;
+  --text: #121714;
+  --muted: #667068;
+  --line: #dce5dd;
+  --line-strong: #b8c8bd;
+  --soft: #f4f8f4;
+  --primary: #2fad5f;
+  --primary-dark: #137b43;
+  --primary-soft: #e9f8ef;
+  --accent: #0d7f73;
+  --danger: #b42318;
+  --danger-soft: #fff1ee;
+  --focus: #1f8bff;
+  --shadow: 0 18px 44px rgba(21, 35, 25, 0.08);
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 250, 246, 0.98)),
+    var(--bg);
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: rgba(47, 173, 95, 0.14);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid rgba(31, 139, 255, 0.42);
+  outline-offset: 3px;
+}
+
+.app-shell {
+  padding: clamp(18px, 4vw, 42px) 14px;
+}
+
+.form-panel {
+  width: min(100%, 1080px);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow);
+  padding: clamp(18px, 4vw, 42px);
+}
+
+.form-panel::before {
+  height: 4px;
+  background: var(--primary);
+}
+
+.app-header {
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+}
+
+.eyebrow,
+.admin-hero p,
+.project-drawer-header p,
+.project-file-pane-header p,
+.ai-requirements-guide span,
+.project-tree-root {
+  color: var(--primary-dark);
+  text-transform: lowercase;
+}
+
+h1 {
+  font-size: clamp(1.7rem, 4vw, 2.18rem);
+}
+
+.lead,
+.step-description {
+  color: var(--muted);
+}
+
+.progress-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  margin: -2px -2px 26px;
+  padding: 10px 2px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.progress-track {
+  height: 5px;
+  background: #e9eee8;
+}
+
+.progress-bar {
+  background: var(--primary);
+}
+
+.step-jump-nav {
+  gap: 8px;
+}
+
+.step-jump-button {
+  min-height: 44px;
+  border-color: var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.step-jump-button:hover {
+  transform: translateY(-1px);
+}
+
+.step-jump-button.active,
+.step-jump-button.visited:not(.active) {
+  border-color: rgba(47, 173, 95, 0.58);
+}
+
+.step-jump-button.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.step-jump-button.visited:not(.active) {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.step-jump-number {
+  background: #edf2ed;
+}
+
+.step-jump-button.active .step-jump-number {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.meeting-banner {
+  border-color: rgba(47, 173, 95, 0.28);
+  border-radius: 8px;
+  background: #f1fbf4;
+  box-shadow: none;
+}
+
+.meeting-actions .button,
+.button {
+  border-radius: 8px;
+}
+
+.field,
+.review-needed-panel,
+.summary-card,
+.option-card,
+.purpose-card,
+.audience-card,
+.tri-row,
+.contents-tri-row,
+.features-tri-row,
+.schedule-card,
+.server-info-card,
+.admin-key-card,
+.admin-stats article,
+.admin-control-bar,
+.admin-card,
+.admin-empty-state,
+.project-file-pane-header,
+.project-file-row,
+.company-detail-card,
+.company-action-card,
+.requirements-card,
+.ai-requirements-guide,
+.ai-requirements-prompt {
+  border-color: var(--line);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+input,
+textarea,
+select {
+  border-color: var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: rgba(47, 173, 95, 0.58);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(47, 173, 95, 0.13);
+}
+
+.option-card,
+.purpose-card,
+.audience-card,
+.tri-choice,
+.contents-tri-choice,
+.features-tri-choice {
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.option-card:hover,
+.purpose-card:hover,
+.audience-card:hover,
+.tri-choice:hover,
+.contents-tri-choice:hover,
+.features-tri-choice:hover {
+  border-color: rgba(47, 173, 95, 0.58);
+  transform: translateY(-1px);
+}
+
+.option-card:has(input:checked),
+.purpose-card:has(input:checked),
+.audience-card:has(input:checked),
+.tri-choice:has(input:checked),
+.contents-tri-choice:has(input:checked),
+.features-tri-choice:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.button {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.button.primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.button.secondary,
+.button.ghost {
+  background: #ffffff;
+  color: var(--text);
+}
+
+.button.secondary:hover,
+.button.ghost:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+}
+
+.admin-mode {
+  background: var(--bg);
+}
+
+.admin-app-shell {
+  background: var(--bg);
+  grid-template-columns: 248px minmax(0, 1fr);
+}
+
+.admin-sidebar {
+  background: #122018;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-brand > span {
+  border-radius: 8px;
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.admin-brand strong,
+.admin-brand small,
+.admin-nav a {
+  color: #f6fbf7;
+}
+
+.admin-brand small,
+.admin-nav a[aria-disabled="true"] {
+  color: rgba(246, 251, 247, 0.58);
+}
+
+.admin-nav a {
+  border-radius: 8px;
+}
+
+.admin-nav a.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.admin-workspace {
+  max-width: 1180px;
+  padding: clamp(22px, 4vw, 46px);
+}
+
+.admin-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+
+.admin-hero h1 {
+  margin-bottom: 6px;
+}
+
+.admin-key-card {
+  align-self: stretch;
+  background: #ffffff;
+}
+
+.admin-key-card div {
+  gap: 10px;
+}
+
+.admin-primary-button {
+  border-radius: 8px;
+  background: #101712;
+  color: #ffffff;
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.admin-primary-button:hover {
+  transform: translateY(-1px);
+  background: #202b23;
+}
+
+.admin-stats,
+.admin-control-bar {
+  margin-bottom: 18px;
+}
+
+.admin-stats article {
+  background: #ffffff;
+}
+
+.admin-stats span,
+.admin-key-card label,
+.admin-search label,
+.admin-status-filter label,
+.project-file-pane-header span,
+.company-detail-card span,
+.company-action-card span,
+.requirements-card span {
+  color: var(--muted);
+}
+
+.admin-control-bar {
+  background: #ffffff;
+  align-items: end;
+}
+
+.admin-summary {
+  align-self: center;
+  color: var(--muted);
+}
+
+.admin-list {
+  gap: 12px;
+}
+
+.admin-card {
+  min-height: 86px;
+  padding: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.admin-card-date,
+.admin-card h2,
+.admin-card p {
+  display: none;
+}
+
+.admin-company-card-button {
+  width: 100%;
+  min-height: 86px;
+  padding: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: clamp(1.18rem, 3vw, 1.55rem);
+  font-weight: 900;
+}
+
+.admin-company-card-button:hover,
+.admin-company-card-button:focus-visible {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.project-drawer {
+  background: var(--bg);
+}
+
+.project-drawer-panel {
+  background: var(--bg);
+}
+
+.project-drawer-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+}
+
+.project-drawer-close {
+  border-color: var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.project-drawer-close:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.project-explorer {
+  background: var(--bg);
+}
+
+.project-tree {
+  background: #ffffff;
+  border-right-color: var(--line);
+}
+
+.project-tree-item {
+  border-radius: 8px;
+}
+
+.project-tree-item:hover,
+.project-tree-item.is-active {
+  background: var(--primary-soft);
+}
+
+.project-tree-item.is-active {
+  color: var(--primary-dark);
+}
+
+.project-folder-icon {
+  background: var(--primary);
+}
+
+.project-folder-icon.is-info,
+.project-folder-icon.is-link,
+.project-folder-icon.is-requirements,
+.project-folder-icon.is-ai {
+  background: var(--primary);
+}
+
+.project-file-pane {
+  background: var(--bg);
+}
+
+.project-file-pane-header {
+  background: #ffffff;
+}
+
+.project-file-pane-header > strong {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.project-file-row {
+  background: #ffffff;
+}
+
+.project-file-row:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.project-empty-state {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.company-detail-card,
+.company-action-card,
+.requirements-card,
+.ai-requirements-guide {
+  background: #ffffff;
+}
+
+.company-action-card:hover,
+.company-action-card:focus-visible {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.company-action-mini-button {
+  border-radius: 8px;
+  background: #101712;
+  color: #ffffff;
+}
+
+.requirements-board {
+  gap: 12px;
+}
+
+.requirements-card {
+  padding: 16px;
+}
+
+.ai-requirements-layout {
+  align-items: start;
+}
+
+.ai-requirements-prompt {
+  background: #ffffff;
+  color: #111611;
+  line-height: 1.74;
+}
+
+@media (max-width: 920px) {
+  .admin-app-shell {
+    display: block;
+  }
+
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-brand {
+    margin: 0;
+  }
+
+  .admin-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .admin-nav a {
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 10px 14px;
+  }
+
+  .admin-workspace {
+    padding: 18px 12px 28px;
+  }
+
+  .admin-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-key-card div,
+  .admin-control-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-company-card-button {
+    min-height: 74px;
+    padding: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    background: var(--bg);
+  }
+
+  .app-shell {
+    padding: 0;
+  }
+
+  .form-panel {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 18px 14px calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .form-panel::before {
+    display: none;
+  }
+
+  .app-header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+  }
+
+  .progress-wrap {
+    margin: 0 -14px 18px;
+    padding: 8px 14px 10px;
+  }
+
+  .step-jump-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .step-jump-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .step-jump-button {
+    flex: 0 0 46px;
+    width: 46px;
+    min-height: 40px;
+    scroll-snap-align: start;
+  }
+
+  .meeting-banner {
+    padding: 14px;
+  }
+
+  .meeting-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meeting-actions .button {
+    min-height: 44px;
+  }
+
+  .form-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: 10px;
+    margin: 0;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+
+  .form-actions .button.secondary {
+    order: 1;
+  }
+
+  .form-actions .button.primary {
+    order: 2;
+  }
+
+  .option-grid,
+  .purpose-option-grid,
+  .audience-option-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .purpose-card {
+    min-height: 92px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    text-align: left;
+  }
+
+  .project-drawer-header {
+    padding: 14px;
+  }
+
+  .project-explorer {
+    grid-template-columns: 1fr;
+  }
+
+  .project-tree {
+    position: sticky;
+    top: 76px;
+    z-index: 4;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    scrollbar-width: none;
+  }
+
+  .project-tree::-webkit-scrollbar {
+    display: none;
+  }
+
+  .project-tree-item {
+    flex: 0 0 auto;
+    min-width: 154px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    padding: 10px;
+  }
+
+  .project-tree-item em {
+    display: none;
+  }
+
+  .project-file-pane {
+    padding: 12px;
+  }
+
+  .company-detail-grid,
+  .requirements-board,
+  .ai-requirements-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-requirements-prompt {
+    min-height: 54dvh;
+    font-size: 0.88rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
