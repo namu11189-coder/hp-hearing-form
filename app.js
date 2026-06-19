@@ -7,6 +7,7 @@ const isAdminEntry = window.location.pathname.endsWith("/admin.html") || window.
 const mode = {
   isAdmin: query.get("mode") === "admin" || isAdminEntry,
   isMeeting: !query.get("mode") || query.get("mode") === "meeting" || query.has("uuid"),
+  isAdminEmbedded: query.get("embedded") === "admin",
   uuid: query.get("uuid") || "",
   loadedFromServer: false,
   lastSavedAt: ""
@@ -849,6 +850,14 @@ function buildMeetingUrlForAdmin(uuid) {
   return uuid ? `${base}?mode=meeting&uuid=${encodeURIComponent(uuid)}` : "";
 }
 
+function buildEmbeddedMeetingUrl(item) {
+  const sourceUrl = item.uuid ? buildMeetingUrlForAdmin(item.uuid) : item.meetingUrl;
+  if (!sourceUrl) return "";
+  const url = new URL(sourceUrl, location.href);
+  url.searchParams.set("embedded", "admin");
+  return url.toString();
+}
+
 function renderAdminFilters(items) {
   const filters = document.getElementById("admin-filters");
   const search = document.getElementById("admin-search");
@@ -975,25 +984,28 @@ function openCompanyDrawer(item) {
   document.body.appendChild(drawer);
   drawer.querySelector(".project-drawer-backdrop").addEventListener("click", closeProjectDrawer);
   drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
-  drawer.querySelectorAll("[data-company-pane]").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (button.dataset.companyPane === "meeting" && item.meetingUrl) {
-        window.location.assign(item.meetingUrl);
-        return;
-      }
-      drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
-      button.classList.add("is-active");
-      keepActiveProjectTabVisible(button);
-      const panes = {
-        aiRequirements: renderCompanyAiRequirementsPane,
-        meeting: renderCompanyMeetingPane,
-        requirements: renderCompanyRequirementsPane,
-        overview: renderCompanyOverviewPane
-      };
-      drawer.querySelector(".project-file-pane").innerHTML = (panes[button.dataset.companyPane] || renderCompanyOverviewPane)(item);
-    });
-  });
+  const showCompanyPane = (paneKey) => {
+    const navButton = drawer.querySelector(`.project-tree-item[data-company-pane="${paneKey}"]`);
+    drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
+    if (navButton) {
+      navButton.classList.add("is-active");
+      keepActiveProjectTabVisible(navButton);
+    }
+    drawer.querySelector(".project-explorer").classList.toggle("is-embedded-form-active", paneKey === "meeting" && Boolean(buildEmbeddedMeetingUrl(item)));
+    const panes = {
+      aiRequirements: renderCompanyAiRequirementsPane,
+      meeting: renderCompanyMeetingPane,
+      requirements: renderCompanyRequirementsPane,
+      overview: renderCompanyOverviewPane
+    };
+    drawer.querySelector(".project-file-pane").innerHTML = (panes[paneKey] || renderCompanyOverviewPane)(item);
+  };
   drawer.addEventListener("click", async (event) => {
+    const paneButton = event.target.closest("[data-company-pane]");
+    if (paneButton && drawer.contains(paneButton)) {
+      showCompanyPane(paneButton.dataset.companyPane);
+      return;
+    }
     const button = event.target.closest("[data-copy-ai-prompt]");
     if (!button) return;
     const prompt = drawer.querySelector("#ai-requirements-prompt")?.value || "";
@@ -1043,19 +1055,42 @@ function renderCompanyDetail(label, value) {
 }
 
 function renderCompanyMeetingPane(item) {
-  return `
-    <div class="project-file-pane-header">
-      <div>
-        <p>form</p>
-        <h3>フォーム・打ち合わせ</h3>
-        <span>回答内容を開いて、打ち合わせで編集・確認します。</span>
+  const embeddedUrl = buildEmbeddedMeetingUrl(item);
+  if (!embeddedUrl) {
+    return `
+      <div class="project-file-pane-header">
+        <div>
+          <p>form</p>
+          <h3>フォーム・打ち合わせ</h3>
+          <span>回答内容を管理画面内で開きます。</span>
+        </div>
       </div>
-    </div>
-    <div class="company-action-list">
-      ${item.meetingUrl ? `<a class="company-action-card" href="${escapeHtml(item.meetingUrl)}">
-        <span>打ち合わせフォーム</span>
-        <strong>回答内容を開く</strong>
-      </a>` : `<div class="project-empty-state"><p>打ち合わせリンクがありません</p><span>Spreadsheet側の打ち合わせ用リンク列を確認してください。</span></div>`}
+      <div class="project-empty-state">
+        <p>打ち合わせリンクがありません</p>
+        <span>UUIDまたはSpreadsheet側の打ち合わせ用リンク列を確認してください。</span>
+      </div>
+    `;
+  }
+  return `
+    <div class="embedded-meeting-pane">
+      <div class="embedded-meeting-toolbar">
+        <div>
+          <p>FORM</p>
+          <strong>打ち合わせフォーム</strong>
+          <span>管理画面内で回答内容を編集・保存できます。</span>
+        </div>
+        <div class="embedded-meeting-actions">
+          <button type="button" data-company-pane="overview">基本情報へ戻る</button>
+          <button type="button" data-company-pane="requirements">要件定義</button>
+          <button type="button" data-company-pane="aiRequirements">AI要件定義</button>
+        </div>
+      </div>
+      <iframe
+        class="embedded-meeting-frame"
+        title="${escapeHtml(item.companyName)}の打ち合わせフォーム"
+        src="${escapeHtml(embeddedUrl)}"
+        loading="eager"
+      ></iframe>
     </div>
   `;
 }
@@ -2216,6 +2251,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 async function init() {
+  if (mode.isAdminEmbedded) {
+    document.body.classList.add("embedded-admin-form");
+  }
   if (mode.isAdmin) {
     renderAdminScreen();
     return;
