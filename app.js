@@ -3,8 +3,9 @@ const STORAGE_KEY = "homepage_hearing_form_v1";
 const config = window.HOMEPAGE_HEARING_FORM_CONFIG || {};
 const REQUIRED_VALIDATION_ENABLED = true;
 const query = new URLSearchParams(window.location.search);
+const isAdminEntry = window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("\\admin.html");
 const mode = {
-  isAdmin: query.get("mode") === "admin",
+  isAdmin: query.get("mode") === "admin" || isAdminEntry,
   isMeeting: !query.get("mode") || query.get("mode") === "meeting" || query.has("uuid"),
   uuid: query.get("uuid") || "",
   loadedFromServer: false,
@@ -756,7 +757,7 @@ function renderAdminScreen() {
 
         <section id="admin-list" class="admin-list admin-empty-state">
           <h2>管理キーを入力してください</h2>
-          <p>案件一覧を読み込むと、ここにカードで表示されます。</p>
+          <p>案件一覧を読み込むと、ここにワークスペース形式で表示されます。</p>
         </section>
       </section>
     </main>
@@ -790,7 +791,6 @@ function getManagementStatusLabel(status) {
 }
 
 let adminCases = [];
-let projectIndex = [];
 
 async function loadAdminCases() {
   const keyInput = document.getElementById("admin-key");
@@ -816,7 +816,6 @@ async function loadAdminCases() {
     url.searchParams.set("action", "list");
     url.searchParams.set("adminKey", adminKey);
     const result = await fetchJson(url.toString());
-    projectIndex = await loadProjectIndex();
     adminCases = (result.items || []).map(normalizeAdminCase);
     renderAdminStats(adminCases);
     renderAdminFilters(adminCases);
@@ -829,26 +828,12 @@ async function loadAdminCases() {
   }
 }
 
-async function loadProjectIndex() {
-  try {
-    const response = await fetch("./projects/index.json", { cache: "no-store" });
-    if (!response.ok) return [];
-    const result = await response.json();
-    return result.projects || [];
-  } catch (error) {
-    console.warn("制作フォルダー構成を読み込めませんでした", error);
-    return [];
-  }
-}
-
 function normalizeAdminCase(item) {
   const answerJson = normalizeAnswerData(item.answerJson || {});
   const reviewCount = getReviewNeededItems(answerJson).length;
-  const project = findProjectForCase(item, answerJson);
   return {
     ...item,
     answerJson,
-    project,
     reviewCount,
     companyName: item.companyName || answerJson.customer.companyName || "会社名未入力",
     contactName: item.contactName || answerJson.customer.contactName || "",
@@ -856,23 +841,11 @@ function normalizeAdminCase(item) {
   };
 }
 
-function normalizeProjectName(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/株式会社|有限会社|\s|　/g, "");
-}
-
-function findProjectForCase(item, answerJson) {
-  const companyName = item.companyName || answerJson.customer?.companyName || "";
-  const normalized = normalizeProjectName(companyName);
-  return projectIndex.find((project) => {
-    const projectName = normalizeProjectName(project.companyName);
-    return normalized && projectName && (normalized.includes(projectName) || projectName.includes(normalized));
-  }) || null;
-}
-
 function buildMeetingUrlForAdmin(uuid) {
-  const base = `${location.origin}${location.pathname}`;
+  const pathname = location.pathname.endsWith("/admin.html")
+    ? location.pathname.replace(/admin\.html$/, "index.html")
+    : location.pathname;
+  const base = `${location.origin}${pathname}`;
   return uuid ? `${base}?mode=meeting&uuid=${encodeURIComponent(uuid)}` : "";
 }
 
@@ -908,10 +881,22 @@ function renderAdminList() {
 }
 
 function renderAdminCard(item) {
+  const status = getManagementStatusLabel(item.managementStatus || "unreviewed");
   return `
     <article class="admin-card">
-      <button type="button" class="admin-company-card-button" data-case-uuid="${escapeHtml(item.uuid || "")}">
-        ${escapeHtml(item.companyName)}
+      <button type="button" class="admin-company-card-button" data-case-uuid="${escapeHtml(item.uuid || "")}" aria-label="${escapeHtml(item.companyName)}の案件管理を開く">
+        <span class="admin-case-main">
+          <span class="admin-case-company">${escapeHtml(item.companyName)}</span>
+          <span class="admin-case-sub">${escapeHtml(item.contactName || "担当者未入力")} / ${escapeHtml(item.submittedAt || "送信日時なし")}</span>
+        </span>
+        <span class="admin-case-meta">
+          <span class="admin-case-status">${escapeHtml(status)}</span>
+          <span class="admin-case-review">確認 ${item.reviewCount || 0}件</span>
+        </span>
+        <span class="admin-case-contact">
+          <span>${escapeHtml(item.email || "メール未入力")}</span>
+          <span>${escapeHtml(item.phone || "電話未入力")}</span>
+        </span>
       </button>
     </article>
   `;
@@ -922,20 +907,11 @@ document.addEventListener("click", (event) => {
   if (caseButton) {
     const item = adminCases.find((entry) => entry.uuid === caseButton.dataset.caseUuid);
     if (item) openCompanyDrawer(item);
-    return;
   }
-
-  const projectButton = event.target.closest("[data-project-id]");
-  if (!projectButton) return;
-  const project = projectIndex.find((entry) => entry.id === projectButton.dataset.projectId);
-  if (project) openCompanyDrawer({ companyName: project.companyName, project });
 });
 
 function openCompanyDrawer(item) {
   closeProjectDrawer();
-  const project = item.project;
-  const sections = project?.sections || [];
-  const firstSection = sections[0] || { name: "", label: "", description: "", files: [] };
   const drawer = document.createElement("aside");
   drawer.className = "project-drawer";
   drawer.id = "project-drawer";
@@ -981,24 +957,6 @@ function openCompanyDrawer(item) {
               <small>meeting link</small>
             </span>
           </button>
-          <button type="button" class="project-tree-item" data-project-section="${escapeHtml(firstSection.name)}"${project ? "" : " disabled"}>
-            <span class="project-folder-icon" aria-hidden="true"></span>
-            <span>
-              <strong>ファイル構成</strong>
-              <small>${escapeHtml(project?.folder || "未設定")}</small>
-            </span>
-            <em>${sections.reduce((sum, section) => sum + section.files.length, 0)}</em>
-          </button>
-          ${sections.map((section, index) => `
-            <button type="button" class="project-tree-item project-tree-child" data-project-section="${escapeHtml(section.name)}">
-              <span class="project-folder-icon" aria-hidden="true"></span>
-              <span>
-                <strong>${escapeHtml(section.label)}</strong>
-                <small>${escapeHtml(section.name)}</small>
-              </span>
-              <em>${section.files.length}</em>
-            </button>
-          `).join("")}
         </nav>
         <section class="project-file-pane" aria-live="polite">
           ${renderCompanyOverviewPane(item)}
@@ -1022,16 +980,6 @@ function openCompanyDrawer(item) {
         overview: renderCompanyOverviewPane
       };
       drawer.querySelector(".project-file-pane").innerHTML = (panes[button.dataset.companyPane] || renderCompanyOverviewPane)(item);
-    });
-  });
-  drawer.querySelectorAll("[data-project-section]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const section = sections.find((entry) => entry.name === button.dataset.projectSection);
-      if (!section) return;
-      drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
-      button.classList.add("is-active");
-      keepActiveProjectTabVisible(button);
-      drawer.querySelector(".project-file-pane").innerHTML = renderProjectFilePane(section);
     });
   });
   drawer.addEventListener("click", async (event) => {
@@ -1124,7 +1072,7 @@ function renderCompanyRequirementsPane(item) {
       ${renderRequirementCard("ページ構成", requiredPages.length ? requiredPages.join("、") : "必要ページは打ち合わせで整理", undecidedPages.length ? `未定: ${undecidedPages.join("、")}` : "未定ページなし")}
       ${renderRequirementCard("必要機能", requiredFeatures.length ? requiredFeatures.join("、") : "必要機能は打ち合わせで整理", undecidedFeatures.length ? `未定: ${undecidedFeatures.join("、")}` : "未定機能なし")}
       ${renderRequirementCard("デザイン", formatDesignSummary(data.design), "雰囲気・色・参考サイト")}
-      ${renderRequirementCard("素材", formatMaterialSummary(data.materials, item.project), "ロゴ、写真、文章、既存資料")}
+      ${renderRequirementCard("素材", formatMaterialSummary(data.materials), "ロゴ、写真、文章、既存資料")}
       ${renderRequirementCard("公開・運用", formatOperationSummary(data.operation, data.scheduleBudgetServer), "公開時期、更新方法、サーバー")}
       ${renderRequirementCard("次回確認", pending.length ? pending.map((entry) => `${entry.label}: ${entry.value}`).join(" / ") : "大きな未定項目はありません", reviewItems.length > pending.length ? `ほか${reviewItems.length - pending.length}件` : "打ち合わせで確定へ")}
     </div>
@@ -1160,9 +1108,6 @@ function buildAiRequirementsPrompt(item) {
   const undecidedPages = getTriEntries(data.contents?.contents, "undecided");
   const requiredFeatures = getTriEntries(data.features?.features, "needed");
   const undecidedFeatures = getTriEntries(data.features?.features, "undecided");
-  const project = item.project || {};
-  const sections = project.sections || [];
-  const files = sections.flatMap((section) => (section.files || []).map((file) => `${section.label}: ${file}`));
   const lines = [
     "あなたはWeb制作の要件定義を行うディレクターです。",
     "以下の情報は、初回フォーム回答に対して制作者が打ち合わせで追記・修正した最新版です。",
@@ -1199,7 +1144,7 @@ function buildAiRequirementsPrompt(item) {
     `必要機能: ${requiredFeatures.length ? requiredFeatures.join("、") : "未整理"}`,
     `未定機能: ${undecidedFeatures.length ? undecidedFeatures.join("、") : "なし"}`,
     `デザイン: ${formatDesignSummary(data.design)}`,
-    `素材: ${formatMaterialSummary(data.materials, project)}`,
+    `素材: ${formatMaterialSummary(data.materials)}`,
     `公開・運用: ${formatOperationSummary(data.operation, data.scheduleBudgetServer)}`,
     "",
     "## 会社・素材・補足",
@@ -1207,8 +1152,6 @@ function buildAiRequirementsPrompt(item) {
     `現在のホームページURL: ${data.customer?.currentWebsiteUrl || "未入力"}`,
     `SNS情報: ${data.customer?.sns || "未入力"}`,
     `補足事項: ${data.customer?.notes || "未入力"}`,
-    `案件フォルダー: ${project.folder || "未設定"}`,
-    `保管ファイル: ${files.length ? files.join(" / ") : "なし"}`,
     "",
     "## 打ち合わせ後の最新版フォーム全回答",
     buildFullAnswerText(data),
@@ -1365,13 +1308,11 @@ function formatDesignSummary(design = {}) {
   return parts.length ? parts.join(" / ") : "未入力";
 }
 
-function formatMaterialSummary(materials = {}, project = null) {
-  const assetCount = (project?.sections || []).find((section) => section.name === "00_brand-assets")?.files.length || 0;
+function formatMaterialSummary(materials = {}) {
   const parts = [
     materials.status ? getMaterialStatusLabel(materials.status) : "",
     materials.photoNeed,
-    materials.documents,
-    assetCount ? `ブランド素材 ${assetCount}件` : ""
+    materials.documents
   ].filter((value) => value && value !== "未定");
   return parts.length ? parts.join(" / ") : "未入力";
 }
@@ -1410,55 +1351,6 @@ function getOperationPlanLabel(value) {
     need_consultation: "相談希望"
   };
   return labels[value] || value;
-}
-
-function renderProjectFilePane(section) {
-  const files = section.files || [];
-  return `
-    <div class="project-file-pane-header">
-      <div>
-        <p>${escapeHtml(section.name)}</p>
-        <h3>${escapeHtml(section.label)}</h3>
-        <span>${escapeHtml(section.description)}</span>
-      </div>
-      <strong>${files.length}件</strong>
-    </div>
-    ${
-      files.length
-        ? `<div class="project-file-list">
-            ${files.map((file) => `
-              <article class="project-file-row">
-                <span class="project-file-icon" aria-hidden="true">${escapeHtml(getProjectFileExtension(file))}</span>
-                <div>
-                  <strong>${escapeHtml(file)}</strong>
-                  <small>${escapeHtml(getProjectFileTypeLabel(file))}</small>
-                </div>
-              </article>
-            `).join("")}
-          </div>`
-        : `<div class="project-empty-state">
-            <p>まだファイルはありません</p>
-            <span>ここに提案書、構成案、見積前メモなどを追加していく想定です。</span>
-          </div>`
-    }
-  `;
-}
-
-function getProjectFileExtension(fileName) {
-  const extension = String(fileName || "").split(".").pop();
-  return extension && extension !== fileName ? extension.slice(0, 4).toUpperCase() : "FILE";
-}
-
-function getProjectFileTypeLabel(fileName) {
-  const extension = getProjectFileExtension(fileName).toLowerCase();
-  const labels = {
-    docx: "Word資料",
-    html: "HTML資料",
-    pdf: "PDF資料",
-    xlsx: "Spreadsheet",
-    md: "メモ",
-  };
-  return labels[extension] || "制作ファイル";
 }
 
 function closeProjectDrawer() {
@@ -2280,7 +2172,7 @@ async function saveMeetingAnswer() {
   }
 }
 
-prevButton.addEventListener("click", () => goToStep(state.currentStep - 1));
+prevButton?.addEventListener("click", () => goToStep(state.currentStep - 1));
 stepJumpNav?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-step-index]");
   if (!button) return;
@@ -2291,7 +2183,7 @@ reviewNeededPanel?.addEventListener("click", (event) => {
   if (!button) return;
   goToStep(Number(button.dataset.reviewStep));
 });
-nextButton.addEventListener("click", () => {
+nextButton?.addEventListener("click", () => {
   if (mode.isMeeting && state.currentStep === -1) {
     goToStep(0);
     return;
@@ -2306,8 +2198,8 @@ nextButton.addEventListener("click", () => {
   goToStep(state.currentStep + 1);
 });
 
-document.getElementById("help-close").addEventListener("click", closeHelp);
-document.getElementById("help-backdrop").addEventListener("click", closeHelp);
+document.getElementById("help-close")?.addEventListener("click", closeHelp);
+document.getElementById("help-backdrop")?.addEventListener("click", closeHelp);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeHelp();
 });
