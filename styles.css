@@ -4359,14 +4359,6 @@ body.admin-mode .app-shell {
   line-height: 1.72;
 }
 
-.project-explorer.is-embedded-form-active {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.project-explorer.is-embedded-form-active .project-tree {
-  display: none;
-}
-
 .project-explorer.is-embedded-form-active .project-file-pane {
   padding: 0;
   background: #050506;
@@ -4903,10 +4895,6 @@ body.admin-mode {
 }
 
 @media (max-width: 920px) {
-  .project-explorer.is-embedded-form-active .project-tree {
-    display: none;
-  }
-
   .embedded-meeting-pane {
     min-height: calc(100dvh - 78px);
   }
