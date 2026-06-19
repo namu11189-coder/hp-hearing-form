@@ -977,6 +977,10 @@ function openCompanyDrawer(item) {
   drawer.querySelector(".project-drawer-close").addEventListener("click", closeProjectDrawer);
   drawer.querySelectorAll("[data-company-pane]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.companyPane === "meeting" && item.meetingUrl) {
+        window.location.assign(item.meetingUrl);
+        return;
+      }
       drawer.querySelectorAll(".project-tree-item").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
       keepActiveProjectTabVisible(button);
