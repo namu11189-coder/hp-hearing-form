@@ -877,7 +877,14 @@ function renderAdminList() {
     return;
   }
   list.className = "admin-list";
-  list.innerHTML = filtered.map(renderAdminCard).join("");
+  list.innerHTML = `
+    <div class="admin-list-header" aria-hidden="true">
+      <span>company</span>
+      <span>status</span>
+      <span>contact</span>
+    </div>
+    ${filtered.map(renderAdminCard).join("")}
+  `;
 }
 
 function renderAdminCard(item) {
