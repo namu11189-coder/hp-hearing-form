@@ -329,7 +329,8 @@ const state = {
   data: createDefaultData(),
   hasRestoredChoice: false,
   submitted: false,
-  mode: mode.isAdmin ? "admin" : mode.isMeeting ? "meeting" : "input"
+  mode: mode.isAdmin ? "admin" : mode.isMeeting ? "meeting" : "input",
+  meetingOpenSections: null
 };
 
 const root = document.getElementById("step-root");
@@ -638,6 +639,20 @@ function getReviewItemsForStepIndex(stepIndex) {
   return getReviewNeededItems().filter((item) => item.stepIndex === stepIndex);
 }
 
+function isMeetingSectionOpen(index, defaultOpen) {
+  const key = String(index);
+  if (!state.meetingOpenSections) return defaultOpen;
+  if (Object.prototype.hasOwnProperty.call(state.meetingOpenSections, key)) {
+    return state.meetingOpenSections[key];
+  }
+  return defaultOpen;
+}
+
+function setMeetingSectionOpen(index, isOpen) {
+  if (!state.meetingOpenSections) state.meetingOpenSections = {};
+  state.meetingOpenSections[String(index)] = Boolean(isOpen);
+}
+
 function renderReviewNeededPanel() {
   if (!reviewNeededPanel) return;
   reviewNeededPanel.classList.add("hidden");
@@ -731,6 +746,7 @@ function getMeetingSectionId(index) {
 function scrollToMeetingSection(index) {
   const target = document.getElementById(getMeetingSectionId(index));
   if (!target) return;
+  if (target.tagName === "DETAILS") target.open = true;
   target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -1501,14 +1517,26 @@ function renderStepJumpNav() {
 
 function renderMeetingCompactWorkspace() {
   const visibleSteps = getMeetingEditSteps();
+  const reviewItems = getReviewNeededItems();
+  const reviewOpenAttribute = isMeetingSectionOpen(-1, true) ? "open" : "";
   return `
     <div class="meeting-sheet">
-      <section class="meeting-sheet-section meeting-sheet-review-section" id="${getMeetingSectionId(-1)}" data-meeting-section="-1">
-        <span class="meeting-sheet-index">1</span>
+      <details class="meeting-sheet-section meeting-sheet-detail meeting-sheet-review-section meeting-sheet-review-detail ${reviewItems.length ? "has-review-items" : ""}" id="${getMeetingSectionId(-1)}" data-meeting-section="-1" ${reviewOpenAttribute}>
+        <summary class="meeting-sheet-summary">
+          <span class="meeting-sheet-index">1</span>
+          <span class="meeting-sheet-summary-main">
+            <h2>確認が必要な項目</h2>
+            <span>未定・相談希望の項目をまとめています。</span>
+          </span>
+          <span class="meeting-sheet-summary-actions">
+            <span class="meeting-sheet-review-badge">${reviewItems.length ? `要確認 ${reviewItems.length}件` : "確認なし"}</span>
+            <span class="meeting-sheet-collapse-icon" aria-hidden="true"></span>
+          </span>
+        </summary>
         <div class="meeting-sheet-body">
           ${renderReviewNeededStep()}
         </div>
-      </section>
+      </details>
       ${visibleSteps.map((step, index) => renderMeetingSheetStep(step, index, index + 2)).join("")}
     </div>
   `;
@@ -1516,7 +1544,7 @@ function renderMeetingCompactWorkspace() {
 
 function renderMeetingSheetStep(step, index, displayNumber) {
   const reviewCount = getReviewItemsForStepIndex(index).length;
-  const openAttribute = reviewCount ? "open" : "";
+  const openAttribute = isMeetingSectionOpen(index, reviewCount > 0) ? "open" : "";
   const helpButton = step.help
     ? `<button type="button" class="help-trigger meeting-sheet-help" data-help="${escapeHtml(step.id)}" aria-label="${escapeHtml(step.helpTitle || "詳しく見る")}">?</button>`
     : "";
@@ -1531,6 +1559,7 @@ function renderMeetingSheetStep(step, index, displayNumber) {
         <span class="meeting-sheet-summary-actions">
           ${helpButton}
           <span class="meeting-sheet-review-badge">${reviewCount ? `要確認 ${reviewCount}件` : "確認なし"}</span>
+          <span class="meeting-sheet-collapse-icon" aria-hidden="true"></span>
         </span>
       </summary>
       <div class="meeting-sheet-body">
@@ -1562,6 +1591,16 @@ function renderMeetingStepContent(step, { includeHeader = true } = {}) {
 }
 
 function bindMeetingCompactWorkspaceEvents() {
+  root.querySelectorAll(".meeting-sheet-detail").forEach((details) => {
+    const summary = details.querySelector(".meeting-sheet-summary");
+    summary?.setAttribute("aria-expanded", String(details.open));
+    details.addEventListener("toggle", () => {
+      const sectionIndex = Number(details.dataset.meetingSection);
+      setMeetingSectionOpen(sectionIndex, details.open);
+      summary?.setAttribute("aria-expanded", String(details.open));
+    });
+  });
+
   getMeetingEditSteps().forEach((step, index) => {
     const section = root.querySelector(`[data-meeting-section="${index}"]`);
     if (section && step.fields.length) bindFieldEvents(step, section);
