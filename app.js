@@ -568,6 +568,14 @@ function getStepShortTitle(step) {
   return titles[step.id] || step.title;
 }
 
+function getMeetingEditSteps() {
+  return steps.slice(0, -2);
+}
+
+function getMeetingEditSectionCount() {
+  return 1 + getMeetingEditSteps().length;
+}
+
 function isReviewNeededText(value) {
   return /未定|不明|相談|確認中|未準備|まだ分からない/.test(String(value ?? ""));
 }
@@ -1458,9 +1466,10 @@ function renderReviewNeededLegacyPanel() {
 
 function renderStepJumpNav() {
   if (!stepJumpNav) return;
+  const stepItems = isMeetingEditMode() ? getMeetingEditSteps() : steps.slice(0, -1);
   const jumpItems = [
     ...(mode.isMeeting ? [{ index: -1, title: "確認事項", shortTitle: "要確認" }] : []),
-    ...steps.slice(0, -1).map((step, index) => ({
+    ...stepItems.map((step, index) => ({
       index,
       title: step.title,
       shortTitle: getStepShortTitle(step)
@@ -1487,7 +1496,7 @@ function renderStepJumpNav() {
 }
 
 function renderMeetingCompactWorkspace() {
-  const visibleSteps = steps.slice(0, -1);
+  const visibleSteps = getMeetingEditSteps();
   return `
     <div class="meeting-sheet">
       <section class="meeting-sheet-section meeting-sheet-review-section" id="${getMeetingSectionId(-1)}" data-meeting-section="-1">
@@ -1532,7 +1541,7 @@ function renderMeetingStepContent(step) {
 }
 
 function bindMeetingCompactWorkspaceEvents() {
-  steps.slice(0, -1).forEach((step, index) => {
+  getMeetingEditSteps().forEach((step, index) => {
     const section = root.querySelector(`[data-meeting-section="${index}"]`);
     if (section && step.fields.length) bindFieldEvents(step, section);
   });
@@ -1543,7 +1552,8 @@ function bindMeetingCompactWorkspaceEvents() {
 function render() {
   document.body.classList.toggle("meeting-sheet-mode", isMeetingEditMode());
   if (isMeetingEditMode()) {
-    stepCount.textContent = `11 / 11`;
+    const meetingSectionCount = getMeetingEditSectionCount();
+    stepCount.textContent = `${meetingSectionCount} / ${meetingSectionCount}`;
     progressBar.style.width = "100%";
     renderStepJumpNav();
     renderReviewNeededPanel();
