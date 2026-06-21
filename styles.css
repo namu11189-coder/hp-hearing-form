@@ -6679,3 +6679,46 @@ body.meeting-sheet-mode .schedule-field-row {
   border: 0 !important;
   background: transparent !important;
 }
+
+/* Meeting edit mode: remove remaining inner panels and heading accents */
+body.meeting-sheet-mode .meeting-sheet-detail {
+  background: transparent !important;
+}
+
+body.meeting-sheet-mode .meeting-sheet-detail[open] {
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+body.meeting-sheet-mode .meeting-sheet-detail .meeting-sheet-body {
+  background: transparent !important;
+}
+
+body.meeting-sheet-mode .meeting-sheet-detail[open] .meeting-sheet-summary {
+  background: #141820 !important;
+}
+
+body.meeting-sheet-mode .schedule-section,
+body.meeting-sheet-mode .schedule-section-body,
+body.meeting-sheet-mode .schedule-field-row,
+body.meeting-sheet-mode .schedule-field-main {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.meeting-sheet-mode .schedule-section h3 {
+  gap: 0 !important;
+  padding-left: 0 !important;
+  border-left: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.meeting-sheet-mode .schedule-section h3::before,
+body.meeting-sheet-mode .schedule-section h3::after {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  content: none !important;
+  background: transparent !important;
+}
