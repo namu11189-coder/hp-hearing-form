@@ -634,6 +634,10 @@ function getReviewNeededItems(data = state.data) {
   });
 }
 
+function getReviewItemsForStepIndex(stepIndex) {
+  return getReviewNeededItems().filter((item) => item.stepIndex === stepIndex);
+}
+
 function renderReviewNeededPanel() {
   if (!reviewNeededPanel) return;
   reviewNeededPanel.classList.add("hidden");
@@ -1511,28 +1515,45 @@ function renderMeetingCompactWorkspace() {
 }
 
 function renderMeetingSheetStep(step, index, displayNumber) {
+  const reviewCount = getReviewItemsForStepIndex(index).length;
+  const openAttribute = reviewCount ? "open" : "";
+  const helpButton = step.help
+    ? `<button type="button" class="help-trigger meeting-sheet-help" data-help="${escapeHtml(step.id)}" aria-label="${escapeHtml(step.helpTitle || "詳しく見る")}">?</button>`
+    : "";
   return `
-    <section class="meeting-sheet-section" id="${getMeetingSectionId(index)}" data-meeting-section="${index}">
-      <span class="meeting-sheet-index">${displayNumber}</span>
+    <details class="meeting-sheet-section meeting-sheet-detail ${reviewCount ? "has-review-items" : ""}" id="${getMeetingSectionId(index)}" data-meeting-section="${index}" ${openAttribute}>
+      <summary class="meeting-sheet-summary">
+        <span class="meeting-sheet-index">${displayNumber}</span>
+        <span class="meeting-sheet-summary-main">
+          <h2>${escapeHtml(step.title)}</h2>
+          <span>${escapeHtml(step.description)}</span>
+        </span>
+        <span class="meeting-sheet-summary-actions">
+          ${helpButton}
+          <span class="meeting-sheet-review-badge">${reviewCount ? `要確認 ${reviewCount}件` : "確認なし"}</span>
+        </span>
+      </summary>
       <div class="meeting-sheet-body">
-        ${renderMeetingStepContent(step)}
+        ${renderMeetingStepContent(step, { includeHeader: false })}
       </div>
-    </section>
+    </details>
   `;
 }
 
-function renderMeetingStepContent(step) {
+function renderMeetingStepContent(step, { includeHeader = true } = {}) {
   if (step.id === "confirm") return renderConfirm(step);
   if (step.id === "scheduleBudgetServer") return renderScheduleBudgetServerStep(step);
   return `
     <section class="step" data-step="${escapeHtml(step.id)}">
-      <header class="step-header">
-        <div class="step-title-row">
-          <h2>${escapeHtml(step.title)}</h2>
-          ${step.help ? `<button type="button" class="help-trigger" data-help="${escapeHtml(step.id)}" aria-label="${escapeHtml(step.helpTitle || "詳しく見る")}">?</button>` : ""}
-        </div>
-        <p class="step-description">${escapeHtml(step.description)}</p>
-      </header>
+      ${includeHeader ? `
+        <header class="step-header">
+          <div class="step-title-row">
+            <h2>${escapeHtml(step.title)}</h2>
+            ${step.help ? `<button type="button" class="help-trigger" data-help="${escapeHtml(step.id)}" aria-label="${escapeHtml(step.helpTitle || "詳しく見る")}">?</button>` : ""}
+          </div>
+          <p class="step-description">${escapeHtml(step.description)}</p>
+        </header>
+      ` : ""}
       <div class="fields">
         ${step.fields.map((field) => renderField(step.id, field)).join("")}
       </div>
@@ -1547,6 +1568,12 @@ function bindMeetingCompactWorkspaceEvents() {
   });
   bindReviewNeededEvents(root);
   bindConfirmEvents();
+  root.querySelectorAll(".meeting-sheet-summary .help-trigger").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  });
 }
 
 function render() {
