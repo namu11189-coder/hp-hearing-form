@@ -6205,3 +6205,63 @@ body.meeting-sheet-mode .review-needed-list-large {
     grid-template-columns: 1fr;
   }
 }
+
+/* Meeting edit contrast hardening */
+body.meeting-sheet-mode .meeting-sheet-section:not(.meeting-sheet-detail) {
+  background: transparent;
+}
+
+body.meeting-sheet-mode .meeting-sheet-section:not(.meeting-sheet-detail) .meeting-sheet-body {
+  background: transparent;
+}
+
+body.meeting-sheet-mode .field,
+body.meeting-sheet-mode .field:is(fieldset),
+body.meeting-sheet-mode fieldset.field,
+body.meeting-sheet-mode .control-shell,
+body.meeting-sheet-mode .contents-tri-field,
+body.meeting-sheet-mode .features-tri-field {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.meeting-sheet-mode .field label,
+body.meeting-sheet-mode .field legend,
+body.meeting-sheet-mode .hint,
+body.meeting-sheet-mode .choice-note,
+body.meeting-sheet-mode .schedule-side-note {
+  background: transparent !important;
+}
+
+body.meeting-sheet-mode .field > label,
+body.meeting-sheet-mode .field legend {
+  margin: 0 0 2px;
+  color: #f0f0f3 !important;
+}
+
+body.meeting-sheet-mode .hint,
+body.meeting-sheet-mode .choice-note,
+body.meeting-sheet-mode .schedule-side-note {
+  color: #a8a9b1 !important;
+}
+
+body.meeting-sheet-mode .required {
+  border-color: rgba(255, 107, 99, 0.45) !important;
+  background: rgba(255, 107, 99, 0.18) !important;
+  color: #ffd1cd !important;
+}
+
+body.meeting-sheet-mode input,
+body.meeting-sheet-mode textarea,
+body.meeting-sheet-mode select {
+  border-color: #3d3f48 !important;
+  background: #0b0c0f !important;
+  color: #ffffff !important;
+}
+
+body.meeting-sheet-mode input::placeholder,
+body.meeting-sheet-mode textarea::placeholder {
+  color: #73747d !important;
+  opacity: 1 !important;
+}
