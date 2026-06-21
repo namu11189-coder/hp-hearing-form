@@ -6640,3 +6640,42 @@ body.meeting-sheet-mode .review-needed-summary span {
     padding: 12px !important;
   }
 }
+
+/* Meeting edit mode: flatten nested background layers */
+body.meeting-sheet-mode .meeting-sheet-detail .meeting-sheet-body {
+  background: var(--meeting-panel) !important;
+}
+
+body.meeting-sheet-mode .schedule-sections,
+body.meeting-sheet-mode .schedule-section-body {
+  gap: 14px;
+  background: transparent !important;
+}
+
+body.meeting-sheet-mode .schedule-section {
+  padding: 0 0 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--meeting-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+body.meeting-sheet-mode .schedule-section:last-child {
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+body.meeting-sheet-mode .schedule-section h3 {
+  padding-left: 0 !important;
+  color: #fff9ea !important;
+}
+
+body.meeting-sheet-mode .schedule-section h3::before {
+  display: none !important;
+}
+
+body.meeting-sheet-mode .schedule-field-row {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
