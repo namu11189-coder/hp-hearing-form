@@ -570,7 +570,7 @@ function isReviewNeededText(value) {
 
 function shouldReviewEmptyField(stepId, fieldKey) {
   const reviewEmptyFields = {
-    customer: ["currentWebsiteUrl", "sns", "notes"]
+    customer: ["currentWebsiteUrl", "sns"]
   };
   return reviewEmptyFields[stepId]?.includes(fieldKey) || false;
 }
