@@ -6,7 +6,7 @@ const query = new URLSearchParams(window.location.search);
 const isAdminEntry = window.location.pathname.endsWith("/admin.html") || window.location.pathname.endsWith("\\admin.html");
 const mode = {
   isAdmin: query.get("mode") === "admin" || isAdminEntry,
-  isMeeting: !query.get("mode") || query.get("mode") === "meeting" || query.has("uuid"),
+  isMeeting: query.get("mode") === "meeting" || (!isAdminEntry && query.has("uuid")),
   isAdminEmbedded: query.get("embedded") === "admin",
   uuid: query.get("uuid") || "",
   loadedFromServer: false,
