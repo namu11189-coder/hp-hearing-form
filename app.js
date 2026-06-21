@@ -1073,18 +1073,6 @@ function renderCompanyMeetingPane(item) {
   }
   return `
     <div class="embedded-meeting-pane">
-      <div class="embedded-meeting-toolbar">
-        <div>
-          <p>FORM</p>
-          <strong>打ち合わせフォーム</strong>
-          <span>管理画面内で回答内容を編集・保存できます。</span>
-        </div>
-        <div class="embedded-meeting-actions">
-          <button type="button" data-company-pane="overview">基本情報へ戻る</button>
-          <button type="button" data-company-pane="requirements">要件定義</button>
-          <button type="button" data-company-pane="aiRequirements">AI要件定義</button>
-        </div>
-      </div>
       <iframe
         class="embedded-meeting-frame"
         title="${escapeHtml(item.companyName)}の打ち合わせフォーム"
