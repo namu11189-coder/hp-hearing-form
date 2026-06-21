@@ -6265,3 +6265,102 @@ body.meeting-sheet-mode textarea::placeholder {
   color: #73747d !important;
   opacity: 1 !important;
 }
+
+/* Customer form slim step navigation */
+body:not(.meeting-sheet-mode):not(.admin-mode) .progress-wrap {
+  margin: 0 0 28px;
+  padding: 8px 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: none;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 30px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #6e6e73;
+  padding: 3px 8px 3px 5px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: none;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button:hover,
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button:focus-visible {
+  border-color: rgba(0, 113, 227, 0.24);
+  background: rgba(0, 113, 227, 0.07);
+  color: #005ecb;
+  transform: none;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button.active {
+  border-color: rgba(0, 113, 227, 0.16);
+  background: #0071e3;
+  color: #ffffff;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button.visited:not(.active) {
+  border-color: transparent;
+  background: #eef6ff;
+  color: #0067d8;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-number {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  border-radius: 999px;
+  background: #f1f1f4;
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button.active .step-jump-number {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-label {
+  width: auto;
+  max-width: 5em;
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 0 14px 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  body:not(.meeting-sheet-mode):not(.admin-mode) .step-jump-button {
+    flex: 0 0 auto;
+  }
+}
