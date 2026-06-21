@@ -4872,3 +4872,428 @@ body.embedded-admin-form .form-panel {
     border-radius: 0;
   }
 }
+
+/* Dense meeting edit workspace */
+body.meeting-sheet-mode .app-shell {
+  align-items: stretch;
+  padding: 10px;
+}
+
+body.meeting-sheet-mode .form-panel {
+  width: 100%;
+  max-width: none;
+  padding: 16px 18px;
+  box-shadow: none;
+}
+
+body.meeting-sheet-mode .app-header {
+  display: none;
+}
+
+body.meeting-sheet-mode .meeting-banner {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+body.meeting-sheet-mode .meeting-kicker {
+  font-size: 0.68rem;
+}
+
+body.meeting-sheet-mode .meeting-title {
+  font-size: 0.88rem;
+}
+
+body.meeting-sheet-mode .meeting-meta {
+  margin-top: 1px;
+  font-size: 0.76rem;
+}
+
+body.meeting-sheet-mode .meeting-actions .button {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+body.meeting-sheet-mode .progress-meta,
+body.meeting-sheet-mode .progress-track {
+  display: none;
+}
+
+body.meeting-sheet-mode .progress-wrap {
+  margin: 0 0 10px;
+}
+
+body.meeting-sheet-mode .step-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0;
+}
+
+body.meeting-sheet-mode .step-jump-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 2px 6px;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+body.meeting-sheet-mode .step-jump-button:hover,
+body.meeting-sheet-mode .step-jump-button:focus-visible {
+  background: #eef3ff;
+  color: var(--primary);
+}
+
+body.meeting-sheet-mode .step-jump-number {
+  width: 17px;
+  height: 17px;
+  background: #e9edf5;
+  font-size: 0.66rem;
+}
+
+body.meeting-sheet-mode .step-jump-label {
+  width: auto;
+  font-size: 0.66rem;
+}
+
+body.meeting-sheet-mode .form-actions {
+  display: none;
+}
+
+.meeting-sheet {
+  display: grid;
+  gap: 8px;
+}
+
+.meeting-sheet-section {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0 10px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 10px;
+}
+
+.meeting-sheet-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.meeting-sheet-index {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #e9edf5;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.meeting-sheet-body {
+  min-width: 0;
+}
+
+body.meeting-sheet-mode .meeting-sheet-body > .step,
+body.meeting-sheet-mode .meeting-sheet-body > .review-needed-step-page {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.meeting-sheet-mode .step-header {
+  margin-bottom: 8px;
+}
+
+body.meeting-sheet-mode .step-title-row {
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+body.meeting-sheet-mode .step-title-row h2,
+body.meeting-sheet-mode .step-header h2,
+body.meeting-sheet-mode .schedule-step-header h2 {
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+body.meeting-sheet-mode .step-description {
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+body.meeting-sheet-mode .help-trigger {
+  width: 20px;
+  height: 20px;
+  font-size: 0.68rem;
+}
+
+body.meeting-sheet-mode .fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 10px;
+}
+
+body.meeting-sheet-mode .field {
+  gap: 4px;
+}
+
+body.meeting-sheet-mode .field:has(textarea),
+body.meeting-sheet-mode fieldset.field,
+body.meeting-sheet-mode .contents-tri-field,
+body.meeting-sheet-mode .features-tri-field {
+  grid-column: 1 / -1;
+}
+
+body.meeting-sheet-mode .field label,
+body.meeting-sheet-mode .field legend {
+  font-size: 0.76rem;
+}
+
+body.meeting-sheet-mode .required {
+  min-height: 16px;
+  padding: 0 5px;
+  font-size: 0.62rem;
+}
+
+body.meeting-sheet-mode .hint,
+body.meeting-sheet-mode .choice-note,
+body.meeting-sheet-mode .schedule-side-note {
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+body.meeting-sheet-mode input,
+body.meeting-sheet-mode textarea,
+body.meeting-sheet-mode select {
+  min-height: 34px;
+  border-radius: 5px;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+}
+
+body.meeting-sheet-mode textarea {
+  min-height: 70px;
+}
+
+body.meeting-sheet-mode .option-grid,
+body.meeting-sheet-mode .purpose-option-grid,
+body.meeting-sheet-mode .audience-option-grid {
+  grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+  gap: 6px;
+  margin-top: 0;
+}
+
+body.meeting-sheet-mode .option-card,
+body.meeting-sheet-mode .purpose-card,
+body.meeting-sheet-mode .audience-card {
+  min-height: 34px;
+  border-radius: 5px;
+  padding: 7px 8px;
+  gap: 7px;
+}
+
+body.meeting-sheet-mode .purpose-icon,
+body.meeting-sheet-mode .audience-icon,
+body.meeting-sheet-mode .purpose-check,
+body.meeting-sheet-mode .audience-check {
+  display: none;
+}
+
+body.meeting-sheet-mode .option-card input {
+  width: 15px;
+  height: 15px;
+  min-height: 15px;
+}
+
+body.meeting-sheet-mode .tri-list {
+  gap: 5px;
+}
+
+body.meeting-sheet-mode .tri-row,
+body.meeting-sheet-mode .contents-tri-row,
+body.meeting-sheet-mode .features-tri-row {
+  grid-template-columns: minmax(190px, 1fr) auto;
+  min-height: 38px;
+  gap: 8px;
+  border-radius: 5px;
+  padding: 6px 8px;
+}
+
+body.meeting-sheet-mode .tri-label,
+body.meeting-sheet-mode .contents-tri-label,
+body.meeting-sheet-mode .features-tri-label {
+  gap: 7px;
+  font-size: 0.78rem;
+}
+
+body.meeting-sheet-mode .contents-icon,
+body.meeting-sheet-mode .feature-icon,
+body.meeting-sheet-mode .feature-icon-tile {
+  width: 22px;
+  height: 22px;
+}
+
+body.meeting-sheet-mode .feature-description {
+  display: none;
+}
+
+body.meeting-sheet-mode .tri-controls,
+body.meeting-sheet-mode .contents-tri-controls,
+body.meeting-sheet-mode .features-tri-controls {
+  gap: 4px;
+}
+
+body.meeting-sheet-mode .tri-controls label,
+body.meeting-sheet-mode .contents-tri-controls label,
+body.meeting-sheet-mode .features-tri-controls label {
+  min-height: 26px;
+  border-radius: 4px;
+  padding: 4px 7px;
+  font-size: 0.7rem;
+}
+
+body.meeting-sheet-mode .schedule-sections,
+body.meeting-sheet-mode .schedule-section-body {
+  gap: 9px;
+}
+
+body.meeting-sheet-mode .schedule-section {
+  gap: 7px;
+}
+
+body.meeting-sheet-mode .schedule-section h3 {
+  font-size: 0.84rem;
+}
+
+body.meeting-sheet-mode .schedule-section h3::before {
+  width: 3px;
+  height: 16px;
+}
+
+body.meeting-sheet-mode .server-info-grid {
+  display: none;
+}
+
+body.meeting-sheet-mode .domain-server-pair {
+  gap: 9px;
+}
+
+body.meeting-sheet-mode .review-needed-step-page .step-header {
+  margin-bottom: 6px;
+}
+
+body.meeting-sheet-mode .review-needed-summary {
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 7px 9px;
+  border-radius: 5px;
+}
+
+body.meeting-sheet-mode .review-needed-summary span {
+  width: 26px;
+  height: 26px;
+  font-size: 0.86rem;
+}
+
+body.meeting-sheet-mode .review-needed-summary p,
+body.meeting-sheet-mode .review-needed-group-title strong {
+  font-size: 0.78rem;
+}
+
+body.meeting-sheet-mode .review-needed-groups {
+  gap: 7px;
+}
+
+body.meeting-sheet-mode .review-needed-group {
+  border-radius: 5px;
+}
+
+body.meeting-sheet-mode .review-needed-group-title {
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 7px 8px;
+}
+
+body.meeting-sheet-mode .review-needed-group-title span {
+  min-height: 20px;
+  font-size: 0.66rem;
+}
+
+body.meeting-sheet-mode .review-needed-group-title em {
+  font-size: 0.68rem;
+}
+
+body.meeting-sheet-mode .review-needed-list-large {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 7px;
+}
+
+body.meeting-sheet-mode .review-needed-item {
+  min-height: 0;
+  border-radius: 5px;
+  padding: 6px 7px;
+}
+
+body.meeting-sheet-mode .review-needed-field {
+  font-size: 0.68rem;
+}
+
+body.meeting-sheet-mode .review-needed-value {
+  font-size: 0.76rem;
+}
+
+body.meeting-sheet-mode .confirm-list {
+  gap: 6px;
+}
+
+body.meeting-sheet-mode .confirm-section {
+  border-radius: 5px;
+}
+
+body.meeting-sheet-mode .confirm-section summary {
+  min-height: 34px;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+}
+
+body.meeting-sheet-mode .confirm-items {
+  gap: 6px;
+  padding: 8px;
+}
+
+body.meeting-sheet-mode .confirm-item {
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 0.76rem;
+}
+
+body.meeting-sheet-mode .privacy-note {
+  margin-top: 8px;
+  font-size: 0.68rem;
+}
+
+@media (max-width: 760px) {
+  body.meeting-sheet-mode .fields,
+  body.meeting-sheet-mode .review-needed-list-large,
+  body.meeting-sheet-mode .domain-server-pair {
+    grid-template-columns: 1fr;
+  }
+
+  body.meeting-sheet-mode .tri-row,
+  body.meeting-sheet-mode .contents-tri-row,
+  body.meeting-sheet-mode .features-tri-row,
+  body.meeting-sheet-mode .confirm-item {
+    grid-template-columns: 1fr;
+  }
+}

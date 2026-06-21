@@ -13,6 +13,10 @@ const mode = {
   lastSavedAt: ""
 };
 
+function isMeetingEditMode() {
+  return mode.isMeeting && Boolean(mode.uuid);
+}
+
 const triChoices = [
   { label: "必要", value: "needed" },
   { label: "不要", value: "not_needed" },
@@ -697,8 +701,25 @@ function renderReviewNeededStep() {
 
 function bindReviewNeededEvents(container = root) {
   container.querySelectorAll("[data-review-step]").forEach((button) => {
-    button.addEventListener("click", () => goToStep(Number(button.dataset.reviewStep)));
+    button.addEventListener("click", () => {
+      const targetStep = Number(button.dataset.reviewStep);
+      if (isMeetingEditMode()) {
+        scrollToMeetingSection(targetStep);
+        return;
+      }
+      goToStep(targetStep);
+    });
   });
+}
+
+function getMeetingSectionId(index) {
+  return index === -1 ? "meeting-sheet-review" : `meeting-sheet-step-${index}`;
+}
+
+function scrollToMeetingSection(index) {
+  const target = document.getElementById(getMeetingSectionId(index));
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderAdminScreen() {
@@ -1447,8 +1468,8 @@ function renderStepJumpNav() {
   ];
   stepJumpNav.innerHTML = jumpItems
     .map((item, displayIndex) => {
-      const isCurrent = item.index === state.currentStep;
-      const isPast = mode.isMeeting ? item.index < state.currentStep : item.index < state.currentStep;
+      const isCurrent = !isMeetingEditMode() && item.index === state.currentStep;
+      const isPast = !isMeetingEditMode() && item.index < state.currentStep;
       return `
         <button
           type="button"
@@ -1465,7 +1486,76 @@ function renderStepJumpNav() {
     .join("");
 }
 
+function renderMeetingCompactWorkspace() {
+  const visibleSteps = steps.slice(0, -1);
+  return `
+    <div class="meeting-sheet">
+      <section class="meeting-sheet-section meeting-sheet-review-section" id="${getMeetingSectionId(-1)}" data-meeting-section="-1">
+        <span class="meeting-sheet-index">1</span>
+        <div class="meeting-sheet-body">
+          ${renderReviewNeededStep()}
+        </div>
+      </section>
+      ${visibleSteps.map((step, index) => renderMeetingSheetStep(step, index, index + 2)).join("")}
+    </div>
+  `;
+}
+
+function renderMeetingSheetStep(step, index, displayNumber) {
+  return `
+    <section class="meeting-sheet-section" id="${getMeetingSectionId(index)}" data-meeting-section="${index}">
+      <span class="meeting-sheet-index">${displayNumber}</span>
+      <div class="meeting-sheet-body">
+        ${renderMeetingStepContent(step)}
+      </div>
+    </section>
+  `;
+}
+
+function renderMeetingStepContent(step) {
+  if (step.id === "confirm") return renderConfirm(step);
+  if (step.id === "scheduleBudgetServer") return renderScheduleBudgetServerStep(step);
+  return `
+    <section class="step" data-step="${escapeHtml(step.id)}">
+      <header class="step-header">
+        <div class="step-title-row">
+          <h2>${escapeHtml(step.title)}</h2>
+          ${step.help ? `<button type="button" class="help-trigger" data-help="${escapeHtml(step.id)}" aria-label="${escapeHtml(step.helpTitle || "詳しく見る")}">?</button>` : ""}
+        </div>
+        <p class="step-description">${escapeHtml(step.description)}</p>
+      </header>
+      <div class="fields">
+        ${step.fields.map((field) => renderField(step.id, field)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function bindMeetingCompactWorkspaceEvents() {
+  steps.slice(0, -1).forEach((step, index) => {
+    const section = root.querySelector(`[data-meeting-section="${index}"]`);
+    if (section && step.fields.length) bindFieldEvents(step, section);
+  });
+  bindReviewNeededEvents(root);
+  bindConfirmEvents();
+}
+
 function render() {
+  document.body.classList.toggle("meeting-sheet-mode", isMeetingEditMode());
+  if (isMeetingEditMode()) {
+    stepCount.textContent = `11 / 11`;
+    progressBar.style.width = "100%";
+    renderStepJumpNav();
+    renderReviewNeededPanel();
+    formError.classList.add("hidden");
+    formError.textContent = "";
+    prevButton.hidden = true;
+    nextButton.hidden = true;
+    root.innerHTML = renderMeetingCompactWorkspace();
+    bindMeetingCompactWorkspaceEvents();
+    return;
+  }
+
   if (mode.isMeeting && state.currentStep === -1) {
     stepCount.textContent = `1 / ${steps.length}`;
     progressBar.style.width = "0%";
@@ -1777,13 +1867,13 @@ function getFieldIconPath(stepId, fieldKey) {
   return "";
 }
 
-function bindFieldEvents(step) {
-  root.querySelectorAll("input, textarea, select").forEach((input) => {
+function bindFieldEvents(step, container = root) {
+  container.querySelectorAll("input, textarea, select").forEach((input) => {
     input.addEventListener("input", () => handleInput(step, input));
     input.addEventListener("change", () => handleInput(step, input));
   });
 
-  root.querySelectorAll('input[type="radio"]').forEach((input) => {
+  container.querySelectorAll('input[type="radio"]').forEach((input) => {
     const rememberCheckedState = () => {
       input.dataset.wasChecked = input.checked ? "true" : "false";
     };
@@ -1801,7 +1891,7 @@ function bindFieldEvents(step) {
     });
   });
 
-  root.querySelectorAll(".help-trigger").forEach((button) => {
+  container.querySelectorAll(".help-trigger").forEach((button) => {
     button.addEventListener("click", () => openHelp(step));
   });
 }
@@ -1826,7 +1916,7 @@ function clearRadioInput(step, input) {
     setValue(step.id, field.key, existing);
   }
 
-  validateCurrentStep(false);
+  if (!isMeetingEditMode()) validateCurrentStep(false);
   save();
 }
 
@@ -1853,12 +1943,13 @@ function handleInput(step, input) {
     setValue(step.id, field.key, input.value);
   }
 
-  validateCurrentStep(false);
+  if (!isMeetingEditMode()) validateCurrentStep(false);
   save();
 }
 
 function validateCurrentStep(showErrors = true) {
   const step = steps[state.currentStep];
+  if (!step) return true;
   if (step.id !== "customer" && step.id !== "confirm") return true;
   const errors = validateRequired();
 
@@ -1939,7 +2030,7 @@ function renderConfirmSection(step, index) {
     ? `<span class="confirm-badge empty">未入力 ${emptyCount}件</span>`
     : `<span class="confirm-badge done">済</span>`;
   return `
-    <details class="confirm-section">
+    <details class="confirm-section" ${isMeetingEditMode() ? "open" : ""}>
       <summary><span>${escapeHtml(step.title)}</span>${badge}</summary>
       <div class="confirm-items">
         ${step.fields.map((field) => renderConfirmItem(step, field)).join("")}
@@ -1984,7 +2075,14 @@ function labelsFromOptions(options, values = []) {
 
 function bindConfirmEvents() {
   root.querySelectorAll("[data-edit-step]").forEach((button) => {
-    button.addEventListener("click", () => goToStep(Number(button.dataset.editStep)));
+    button.addEventListener("click", () => {
+      const targetStep = Number(button.dataset.editStep);
+      if (isMeetingEditMode()) {
+        scrollToMeetingSection(targetStep);
+        return;
+      }
+      goToStep(targetStep);
+    });
   });
 }
 
@@ -2193,8 +2291,10 @@ async function saveMeetingAnswer() {
     mode.lastSavedAt = new Date().toLocaleString("ja-JP");
     saveStatus.textContent = "保存済み";
     updateMeetingMeta(`保存済み: ${mode.lastSavedAt}`);
-    state.currentStep = steps.length - 1;
-    render();
+    if (!isMeetingEditMode()) {
+      state.currentStep = steps.length - 1;
+      render();
+    }
   } catch (error) {
     console.error(error);
     updateMeetingMeta("保存できませんでした");
@@ -2210,7 +2310,12 @@ prevButton?.addEventListener("click", () => goToStep(state.currentStep - 1));
 stepJumpNav?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-step-index]");
   if (!button) return;
-  goToStep(Number(button.dataset.stepIndex));
+  const targetStep = Number(button.dataset.stepIndex);
+  if (isMeetingEditMode()) {
+    scrollToMeetingSection(targetStep);
+    return;
+  }
+  goToStep(targetStep);
 });
 reviewNeededPanel?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-review-step]");
